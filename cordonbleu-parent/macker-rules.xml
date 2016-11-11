@@ -1,0 +1,131 @@
+<?xml version="1.0"?>
+<macker>
+    <ruleset name="Internal package may only be referenced by parent package">
+        <foreach var="module" class="(com.benromberg.cordonbleu.**).internal.**">
+            <pattern name="parent" class="${module}.**"/>
+            <pattern name="inside" class="${module}.internal.**"/>
+            <pattern name="outside">
+                <exclude pattern="inside"/>
+            </pattern>
+
+            <access-rule>
+                <message>${from-full} cannot access internal classes from ${module}</message>
+                <deny>
+                    <from pattern="outside"/>
+                    <to pattern="inside"/>
+                    <allow>
+                        <from pattern="parent"/>
+                    </allow>
+                </deny>
+            </access-rule>
+        </foreach>
+    </ruleset>
+
+    <ruleset name="Module rules">
+        <var name="base-package" value="com.benromberg.cordonbleu" />
+        
+        <pattern name="all" class="${base-package}.**"/>
+
+        <pattern name="data" class="${base-package}.data.**"/>
+        <pattern name="data-dao" class="${base-package}.data.dao.**"/>
+        <pattern name="data-migration" class="${base-package}.data.migration.**"/>
+        <pattern name="data-model" class="${base-package}.data.model.**"/>
+        <pattern name="data-util" class="${base-package}.data.util.**"/>
+        <pattern name="data-validation" class="${base-package}.data.validation.**"/>
+        <pattern name="main" class="${base-package}.main.**"/>
+        <pattern name="service" class="${base-package}.service.**"/>
+        <pattern name="util" class="${base-package}.util.**"/>
+
+        <access-rule>
+            <deny>
+                <to pattern="data-dao"/>
+                <allow>
+                    <from>
+                        <include pattern="data-dao"/>
+                        <include pattern="service"/>
+                    </from>
+                </allow>
+            </deny>
+        </access-rule>
+        <access-rule>
+            <deny>
+                <to pattern="data-model"/>
+                <allow>
+                    <from>
+                        <include pattern="data-dao"/>
+                        <include pattern="data-model"/>
+                        <include pattern="data-util"/>
+                        <include pattern="data-validation"/>
+                        <include pattern="main"/>
+                        <include pattern="service"/>
+                    </from>
+                </allow>
+            </deny>
+        </access-rule>
+        <access-rule>
+            <deny>
+                <to pattern="data-migration"/>
+                <allow>
+                    <from>
+                        <include pattern="data-dao"/>
+                        <include pattern="data-migration"/>
+                    </from>
+                </allow>
+            </deny>
+        </access-rule>
+        <access-rule>
+            <deny>
+                <to pattern="data-util"/>
+                <allow>
+                    <from>
+                        <include pattern="all"/>
+                    </from>
+                </allow>
+            </deny>
+        </access-rule>
+        <access-rule>
+            <deny>
+                <to pattern="data-validation"/>
+                <allow>
+                    <from>
+                        <include pattern="data-dao"/>
+                        <include pattern="data-validation"/>
+                        <include pattern="main"/>
+                        <include pattern="service"/>
+                    </from>
+                </allow>
+            </deny>
+        </access-rule>
+        <access-rule>
+            <deny>
+                <to pattern="main"/>
+                <allow>
+                    <from>
+                        <include pattern="main"/>
+                    </from>
+                </allow>
+            </deny>
+        </access-rule>
+        <access-rule>
+            <deny>
+                <to pattern="service"/>
+                <allow>
+                    <from>
+                        <include pattern="main"/>
+                        <include pattern="service"/>
+                    </from>
+                </allow>
+            </deny>
+        </access-rule>
+        <access-rule>
+            <deny>
+                <to pattern="util"/>
+                <allow>
+                    <from>
+                        <include pattern="all"/>
+                    </from>
+                </allow>
+            </deny>
+        </access-rule>
+    </ruleset>
+</macker>

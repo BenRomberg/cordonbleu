@@ -1,0 +1,73 @@
+body {
+  height: 100%;
+  overflow: hidden;
+}
+p:last-child {
+  margin: 0;
+}
+
+.centering-root {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+.centering-wrapper {
+  height: 100%;
+  width: 100%;
+  display: table;
+}
+.centering {
+  display: table-cell;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.fullheight {
+  height: 100%;
+}
+.form-inline > * {
+  margin: 0px 3px;
+}
+.inset {
+  padding: 15px;
+}
+.inset-vertical {
+  padding: 15px 0px;
+}
+
+.popover-button-group {
+  margin-top: 20px;
+  white-space: nowrap;
+}
+.popover-button-group > .btn {
+  float: none;
+}
+.popover {
+  border-color: #d43f3a;
+  max-width: 400px;
+}
+.popover.bottom > .arrow {
+  border-bottom-color: #d43f3a;
+}
+.popover-info {
+  border-color: #46b8da;
+}
+.popover-info.bottom > .arrow {
+  border-bottom-color: #46b8da;
+}
+/* display: none not desirable since element has no height then and notification-list would scroll indefinitely */
+.hidden-popover-content {
+  visibility: hidden;
+  position: absolute;
+  /* actually optional since body has overflow: hidden, but that may become a problem */
+  top: 0;
+  left: 0;
+  width: 100px;
+}
+.list-group-item div {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

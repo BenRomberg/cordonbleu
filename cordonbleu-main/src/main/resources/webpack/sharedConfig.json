@@ -1,0 +1,5 @@
+{
+  "passwordMinimumLength": 6,
+  "nameMaximumLength": 36,
+  "namePattern": "[a-zA-Z0-9-_]+"
+}

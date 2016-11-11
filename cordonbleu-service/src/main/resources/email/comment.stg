@@ -1,0 +1,60 @@
+subject(comments, commit, commitPath, comment, commitMessageFirstLine) ::= "$comment.user.name$ commented on: $commitMessageFirstLine$"
+
+plainBody(comments, commit, commitPath, path, linesBefore, linesAfter) ::= <<
+* Repositories $commit.repositories:plainRepository(); separator="; "$
+* commit $commitPath$
+* by $commit.author.name$ on $commit.created$
+
+$commit.message$
+
+$path$
+===
+
+$linesBefore; separator="\n"$
+
+$comments:plainComment(); separator="\n"$
+
+$linesAfter; separator="\n"$
+>>
+
+plainComment(comment) ::= <<
+<$comment.user.name$>
+$comment.text$
+===
+
+>>
+
+plainRepository(repository) ::= <<
+$repository.repository.name$ ($repository.branches; separator=", "$)
+>>
+
+htmlBody(comments, commit, commitPath, path, linesBefore, linesAfter) ::= <<
+<ul>
+<li>Repositories $commit.repositories:htmlRepository(); separator="; "$</li>
+<li>Commit <a href="$commitPath$"><b>$commit.id.hash$</b></a></li>
+<li>By <b>$commit.author.name$</b> on <b>$commit.created$</b></li>
+</ul>
+<pre>$commit.message$</pre>
+
+<h3>$path$</h3>
+
+$linesBefore:htmlCodeLine()$
+
+<table class="comment">
+$comments:htmlComment()$
+</table>
+
+$linesAfter:htmlCodeLine()$
+>>
+
+htmlCodeLine(line) ::= <<
+<div class="code $line.status$">$if(line.highlightedCode.empty)$&nbsp;$else$$line.highlightedCode$$endif$</div>
+>>
+
+htmlComment(comment) ::= <<
+<tr$if(comment.highlighted)$ class="highlighted"$endif$><td><b>$comment.user.name$</b></td><td>$comment.htmlText$</td></tr>
+>>
+
+htmlRepository(repository) ::= <<
+<b>$repository.repository.name$</b> ($repository.branches; separator=", "$)
+>>

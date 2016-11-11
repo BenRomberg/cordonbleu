@@ -1,0 +1,27 @@
+// this is a dropwizard service configuration, details see http://www.dropwizard.io/0.8.2/docs/manual/configuration.html
+// remove all "comments", adjust values appropriately and rename this file to configuration.json
+{
+  "server": {
+    "type": "simple",
+    "rootPath": "/api/*",
+    "applicationContextPath": "/",
+    "adminContextPath": "/admin",
+    "connector": {
+      "type": "http",
+      "port": 8080
+    }
+  },
+  "codeRepositoryFolder": "/path/to/code-repository",           // needs to be changed to an existing path
+  "mongoUrl": "mongodb://localhost:27017/",                     // needs to point to a running MongoDB instance
+  "highlightingTimeoutInMilliseconds": 1000,                    // increase if many commits don't get highlighted
+  "commitNotificationConsiderationAmount": 100,                 // increase if you need the notifications to consider more commits
+  "emailServer": {
+    "host": "smtp.server",                                      // change email settings
+    "port": 587,
+    "username": "smtp_user",
+    "password": "smtp_password",
+    "rootPath": "http://example.com"                            // the web url that will be used in emails
+  },
+  "sshPrivateKeyPassword": "something-entirely-random"          // private keys will be encrypted using this password,
+                                                                // so they're not available in "plain-text" in the database
+}

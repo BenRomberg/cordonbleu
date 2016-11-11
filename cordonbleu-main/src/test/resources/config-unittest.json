@@ -1,0 +1,14 @@
+{
+  "codeRepositoryFolder": "/tmp/code-repository",
+  "mongoUrl": "mongodb://localhost:27017/",
+  "highlightingTimeoutInMilliseconds": 1000,
+  "commitNotificationConsiderationAmount": 100,
+  "emailServer": {
+    "host": "localhost",
+    "port": 587,
+    "username": "",
+    "password": "",
+    "rootPath": "http://cordonbleu.io"
+  },
+  "sshPrivateKeyPassword": "ssh-private-key-password"
+}

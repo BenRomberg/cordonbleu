@@ -1,0 +1,148 @@
+package com.jobheroes.rest.integration;
+
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+<d>import java.io.InputStream;</d>
+import java.util.HashMap;
+import java.util.Map;
+
+<i>import javax.ws.rs.client.Entity;</i>
+<i>import javax.ws.rs.core.MediaType;</i>
+<i></i>
+import org.apache.commons.lang3.text.StrSubstitutor;
+import org.hamcrest.Matcher;
+<d>import org.junit.Before;</d>
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+<d>import org.junit.runner.RunWith;</d>
+<d>import org.springframework.beans.factory.annotation.Autowired;</d>
+<d>import org.springframework.http.MediaType;</d>
+<d>import org.springframework.mock.web.MockHttpSession;</d>
+<d>import org.springframework.mock.web.MockMultipartFile;</d>
+<d>import org.springframework.test.context.ContextConfiguration;</d>
+<d>import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;</d>
+<d>import org.springframework.test.context.web.WebAppConfiguration;</d>
+<d>import org.springframework.test.web.servlet.MockMvc;</d>
+<d>import org.springframework.test.web.servlet.ResultActions;</d>
+<d>import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;</d>
+<d>import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;</d>
+<d>import org.springframework.test.web.servlet.setup.MockMvcBuilders;</d>
+<i>import org.junit.Rule;</i>
+import org.springframework.util.FileCopyUtils;
+import org.springframework.util.ResourceUtils;
+<d>import org.springframework.web.context.WebApplicationContext;</d>
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.jobheroes.repository.CandidateRepository;
+import com.jobheroes.repository.OccupationRepository;
+import com.jobheroes.repository.Repository;
+import com.jobheroes.repository.mongo.TestEnvironment;
+import com.jobheroes.rest.Dependencies;
+<d>import com.jobheroes.rest.WebConfig;</d>
+<d>import com.jobheroes.util.ResourceUtil;</d>
+<i>import com.jobheroes.rest.gateway.CandidateGateway;</i>
+<i>import com.jobheroes.rest.gateway.ObjectMapperContextResolver;</i>
+import com.jobheroes.util.jackson.JsonEqualsMatcher;
+import com.jobheroes.util.jackson.ObjectMapperFactory;
+
+<d>@RunWith(SpringJUnit4ClassRunner.class)</d>
+<d>@WebAppConfiguration</d>
+<d>@ContextConfiguration(classes = WebConfig.class)</d>
+public abstract class GatewayIntegrationTest implements Repository {
+	private static final String FILE_ROOT = "integration/";
+
+<d>	private MockMvc mockMvc;</d>
+<d>	private MockHttpSession session;</d>
+<d></d>
+<d>	@Autowired</d>
+<d>	private WebApplicationContext wac;</d>
+<d></d>
+	@ClassRule
+	public static TestEnvironment testEnvironment = new TestEnvironment();
+
+<i>	@Rule</i>
+<i>	public JerseyTestRule jerseyTestRule = new JerseyTestRule() //</i>
+<i>			.withResourceAndProviderClasses(CandidateGateway.class, ObjectMapperContextResolver.class);</i>
+<i></i>
+	@BeforeClass
+	public static void setupClass() {
+		Dependencies.setDependencies(new Dependencies(testEnvironment.getRepository()));
+	}
+
+<d>	@Before</d>
+<d>	public void setup() {</d>
+<d>		mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();</d>
+<d>		session = new MockHttpSession();</d>
+<d>	}</d>
+<d></d>
+<d>	protected MockHttpSession getSession() {</d>
+<d>		return session;</d>
+<d>	}</d>
+<d></d>
+<d>	protected MockMvc getMockMvc() {</d>
+<d>		return mockMvc;</d>
+<d>	}</d>
+<d></d>
+	private String getContent(String requestFilename, Object... parameters) throws IOException {
+		File requestFile = ResourceUtils.getFile("classpath:" + getFilePath(requestFilename));
+		String fileContent = FileCopyUtils.copyToString(new FileReader(requestFile));
+		Map<String, Object> parameterMap = new HashMap<>();
+		for (int i = 0; i < parameters.length; i++) {
+			parameterMap.put(Integer.toString(i), convertParameterToJson(parameters[i]));
+		}
+		return StrSubstitutor.replace(fileContent, parameterMap);
+	}
+
+	private String convertParameterToJson(Object parameter) throws JsonProcessingException {
+		return ObjectMapperFactory.getObjectMapper().writeValueAsString(parameter);
+	}
+
+	protected Matcher<String> getContentMatcher(String requestFilename, Object... parameters) throws IOException {
+		return JsonEqualsMatcher.jsonEquals(getContent(requestFilename, parameters));
+	}
+
+<d>	protected ResultActions post(String url, String requestFilename, Object... parameters) throws Exception {</d>
+<d>		return getMockMvc().perform(</d>
+<d>				MockMvcRequestBuilders.post(url).content(getContent(requestFilename, parameters))</d>
+<d>						.contentType(MediaType.APPLICATION_JSON).session(session));</d>
+<d>	}</d>
+<d></d>
+<d>	protected ResultActions post(String url) throws Exception {</d>
+<d>		return getMockMvc().perform(MockMvcRequestBuilders.post(url).contentType(MediaType.APPLICATION_JSON).session(session));</d>
+<i>	protected ResultResponse post(String url) throws Exception {</i>
+<i>		return postWithContent(url, "");</i>
+	}
+
+<d>	protected ResultActions fileUpload(String url, String fileParam, String... filePaths) throws Exception {</d>
+<d>		MockMultipartHttpServletRequestBuilder requestBuilder = MockMvcRequestBuilders.fileUpload(url);</d>
+<d>		for (String filePath : filePaths) {</d>
+<d>			InputStream fileInputStream = ResourceUtil.getInputStream(getFilePath(filePath));</d>
+<d>			requestBuilder.file(new MockMultipartFile(fileParam, filePath, null, fileInputStream));</d>
+<d>		}</d>
+<d>		return getMockMvc().perform(requestBuilder.session(session));</d>
+<i>	protected ResultResponse postWithContent(String url, String request) throws Exception {</i>
+<i>		return new ResultResponse(jerseyTestRule.target(url).request()</i>
+<i>				.post(Entity.<String> entity(request, MediaType.APPLICATION_JSON)));</i>
+	}
+
+	protected String getFilePath(String filePath) {
+		return FILE_ROOT + filePath;
+<d>	}</d>
+<d></d>
+<d>	protected ResultActions postWithParams(String url, Object... parameters) throws Exception {</d>
+<d>		return getMockMvc().perform(</d>
+<d>				MockMvcRequestBuilders.post(url, parameters).contentType(MediaType.APPLICATION_JSON).session(session));</d>
+	}
+
+	@Override
+	public CandidateRepository getCandidateRepository() {
+		return testEnvironment.getRepository().getCandidateRepository();
+	}
+
+	@Override
+	public OccupationRepository getOccupationRepository() {
+		return testEnvironment.getRepository().getOccupationRepository();
+	}
+
+}

@@ -1,0 +1,9 @@
+subject(value) ::= "$value$"
+
+plainBody(value) ::= <<
+$value$
+>>
+
+htmlBody(value) ::= <<
+$value$
+>>
