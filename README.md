@@ -6,6 +6,12 @@ Installation notes:
 * install MongoDB
 * run `run.sh`
 * view `http://localhost:8080/`
+* register as a new user
+* give yourself admin permissions:
+  - log into MongoDB
+  - `use cordonbleu`
+  - `db.user.find().pretty()` and note the `_id` of your user
+  - `db.user.update({ _id: "[INSERT ID HERE]" }, { $set: { flags: ["ADMIN"] } })` inserting the `_id` from the previous step
 
 Development notes:
 
