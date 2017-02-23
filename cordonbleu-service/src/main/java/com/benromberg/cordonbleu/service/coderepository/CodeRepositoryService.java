@@ -21,10 +21,15 @@ import java.util.function.Consumer;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.benromberg.cordonbleu.service.coderepository.keypair.SshPrivateKeyPasswordProvider;
 
 @Singleton
 public class CodeRepositoryService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CodeRepositoryService.class);
+
     private final CodeRepositoryFactory codeRepositoryFactory;
     private final File folder;
     private final CodeRepositoryMetadataDao repositoryDao;
@@ -53,7 +58,13 @@ public class CodeRepositoryService {
     public void updateRepositories(Consumer<Commit> callback) {
         List<CodeRepositoryMetadata> activeRepositories = repositoryDao.findActive();
         removeObsoleteRepositories(activeRepositories);
-        activeRepositories.forEach(repository -> updateRepository(repository, callback));
+        activeRepositories.forEach(repository -> {
+            try {
+                updateRepository(repository, callback);
+            } catch (Exception e) {
+                LOGGER.warn("Couldn't update repository {}.", repository.getName(), e);
+            }
+        });
     }
 
     private void removeObsoleteRepositories(List<CodeRepositoryMetadata> remainingRepositories) {
