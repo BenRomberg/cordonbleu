@@ -27,6 +27,7 @@ import java.util.Optional;
 
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -38,6 +39,7 @@ import com.benromberg.cordonbleu.service.coderepository.CommitWithRepository;
 import com.benromberg.cordonbleu.service.coderepository.GitRepository;
 import com.benromberg.cordonbleu.service.coderepository.PullResult;
 
+@Ignore
 public class GitRepositoryTest implements CommitFixture {
     private static final String BINARY_FILENAME = "file.bin";
     private static final String NEW_FILE_CONTENT = "new file content";
