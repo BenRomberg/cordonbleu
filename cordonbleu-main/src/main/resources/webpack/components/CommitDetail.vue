@@ -96,6 +96,9 @@ code {
 .gap-detail {
   margin-right: 20px; 
 }
+.code-review-btn {
+  margin-left : 10px;
+}
 </style>
 
 <template lang="jade">
@@ -117,6 +120,10 @@ code {
               button.btn.btn-warning(@click="revertCommitApproval($event)") <span class="fa fa-undo"></span> Undo Approval
             template(v-else)
               button#approve-button.btn.btn-success(@click="approveCommit($event)") <span class="fa fa-thumbs-up"></span> Approve
+            template(v-if="commit.collectiveReview")
+              button.btn.btn-info.code-review-btn(@click="proposeToCollectiveReview($event, false)") <span class="fa fa-users"></span> Undo Propose to Collective Review              
+            template(v-else)
+              button.btn.btn-warning.code-review-btn(@click="proposeToCollectiveReview($event, true)") <span class="fa fa-users"></span> Propose to Collective Review
           div
             <span class="fa fa-fw fa-code"></span> <span class="primary-detail">{{commit.hash}}</span>
             br
@@ -128,7 +135,7 @@ code {
             <span class="fa fa-clock-o"></span> {{{commit.approval.time | toTimeAgoSpan}}}
           div
             <span class="primary-detail">{{{commit.author | toCommitAuthorWithAvatar}}}</span>
-            <span class="fa fa-clock-o"></span> {{{commit.created | toTimeAgoSpan}}}
+            <span class="fa fa-clock-o"></span> {{{commit.created | toTimeAgoSpan}}}           
         div#commit-details.panel-group.centering-root(@scroll="scrollCommitView()")
           div#commit-message.code.well {{{commit.messageAsHtml}}}
           div.panel.panel-default(v-for="(index, file) in commit.files")
@@ -186,7 +193,7 @@ module.exports = {
   created: function() {
     this.updateCommit()
   },
-  ready: function() {
+  ready: function() {  
     this.onKeyDown('a', () => {
       if (!this.commit.approval) {
         this.approveCommit('#approve-button')
@@ -263,6 +270,24 @@ module.exports = {
         teamId: this.activeTeam.id
       }, data => this.commit.approval = data)
       this.updateNotifications()
+    },
+    proposeToCollectiveReview: function(eventOrSelector, trueOrFalse) {
+		if (this.requireLogin(eventOrSelector, 'approve this commit')) {
+	        ga('send', 'event', 'commit', 'proposeToCollectiveReview', 'requireLogin')
+	        return
+	    }
+	    if (this.requireTeamMembership(eventOrSelector)) {
+	        ga('send', 'event', 'commit', 'proposeToCollectiveReview', 'requireMembership')
+	        return
+	    }
+    	ga('send', 'event', 'commit', 'proposeToCollectiveReview', 'success')
+    	
+	    this.ajaxPost('/commit/proposeToCollectiveReview', {
+	        "hash": this.$route.params.commitHash,
+	        "teamId": this.activeTeam.id,
+	        "value" : trueOrFalse	        
+	    }, data => this.commit.collectiveReview=trueOrFalse)
+      
     },
     revertCommitApproval: function(event) {
       if (this.requireLogin(event, 'revert the approval')) {

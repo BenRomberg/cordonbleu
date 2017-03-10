@@ -139,6 +139,15 @@ public class CommitResource {
         }
     }
 
+    @POST
+    @Path("/proposeToCollectiveReview")
+    @Timed
+    public void proposeToCollectiveReview(ProposeToCodeReviewRequest request, @Auth UserWithPermissions user) {
+    	Commit commit = commitPermissionGuard.guardApproval(user, request.getCommitId());
+    	
+    	commitService.proposeToCollectiveReview(commit.getId(), request.getValue());
+    }
+    
     @GET
     @Path("/notifications")
     @Timed

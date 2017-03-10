@@ -23,6 +23,10 @@ public class CommitListRequest {
     private final boolean approved;
 
     @JsonProperty
+    private final boolean collectiveReviewOnly;
+    
+    
+    @JsonProperty
     private final Optional<String> lastCommitHash;
 
     @JsonProperty
@@ -30,18 +34,19 @@ public class CommitListRequest {
 
     @JsonCreator
     public CommitListRequest(List<String> repository, List<CommitAuthorRequest> author, List<String> user,
-            boolean approved, Optional<String> lastCommitHash, int limit) {
+            boolean approved, Optional<String> lastCommitHash, int limit, boolean collectiveReviewOnly) {
         this.repository = repository;
         this.author = author;
         this.user = user;
         this.approved = approved;
         this.lastCommitHash = lastCommitHash;
         this.limit = limit;
+        this.collectiveReviewOnly = collectiveReviewOnly;
     }
 
     public RawCommitFilter toFilter() {
         return new RawCommitFilter(author.stream().map(item -> item.toAuthor()).collect(toList()), user, approved,
-                lastCommitHash, limit);
+                lastCommitHash, limit, collectiveReviewOnly);
     }
 
     public List<String> getRepositories() {

@@ -90,6 +90,10 @@ public class CommitDao extends MongoDao<CommitId, Commit> {
         return update(id, DBUpdate.set(Commit.APPROVAL_PROPERTY, approval));
     }
 
+    public Optional<Commit> updateProposetoCollectiveReview(CommitId id, boolean value) {
+        return update(id, DBUpdate.set(Commit.COLLECTIVE_REVIEW, value));
+    }
+    
     public Optional<Commit> updateComment(CommitId commitId, String commentId, String text) {
         Query find = DBQuery.is(ID_PROPERTY, commitId).is(Commit.COMMENTS_PROPERTY + "." + ID_PROPERTY, commentId);
         Builder update = DBUpdate.set(Commit.COMMENTS_PROPERTY + ".$." + Comment.TEXT_PROPERTY, text);
@@ -142,6 +146,9 @@ public class CommitDao extends MongoDao<CommitId, Commit> {
         }
         if (!commitFilter.isApproved()) {
             query = query.and(DBQuery.is(Commit.APPROVAL_PROPERTY, convertToDbObject(Optional.empty())));
+        }
+        if (commitFilter.isCollectiveReview()) {
+            query = query.and(DBQuery.is(Commit.COLLECTIVE_REVIEW, true));
         }
         return findAndSort(query).limit(commitFilter.getLimit()).toArray();
     }

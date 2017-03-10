@@ -12,17 +12,19 @@ import java.util.Optional;
 public class RawCommitFilter {
     private final List<CommitAuthor> authors;
     private final boolean approved;
+    private final boolean collectiveReview;
     private final Optional<String> lastCommitHash;
     private final int limit;
     private final List<String> userIds;
 
     public RawCommitFilter(List<CommitAuthor> authors, List<String> userIds, boolean approved,
-            Optional<String> lastCommitHash, int limit) {
+            Optional<String> lastCommitHash, int limit, boolean collectiveReview) {
         this.authors = authors;
         this.userIds = userIds;
         this.approved = approved;
         this.lastCommitHash = lastCommitHash;
         this.limit = limit;
+        this.collectiveReview=collectiveReview;
     }
 
     public List<String> getUserIds() {
@@ -30,6 +32,6 @@ public class RawCommitFilter {
     }
 
     public CommitFilter toCommitFilter(Team team, List<CodeRepositoryMetadata> repositories, List<User> users) {
-        return new CommitFilter(team, repositories, authors, users, approved, lastCommitHash, limit);
+        return new CommitFilter(team, repositories, authors, users, approved, lastCommitHash, limit, collectiveReview);
     }
 }

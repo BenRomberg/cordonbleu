@@ -525,15 +525,15 @@ public class CommitDaoTest implements CommitFixture, CommentFixture {
     }
 
     private CommitFilter createFilter(CodeRepositoryMetadata repository, CommitAuthor author, boolean approved) {
-        return new CommitFilter(TEAM, asList(repository), asList(author), asList(), approved, Optional.empty(), 100);
+        return new CommitFilter(TEAM, asList(repository), asList(author), asList(), approved, Optional.empty(), 100, false);
     }
 
     private CommitFilter createFilter(CodeRepositoryMetadata repository, User user, boolean approved) {
-        return new CommitFilter(TEAM, asList(repository), asList(), asList(user), approved, Optional.empty(), 100);
+        return new CommitFilter(TEAM, asList(repository), asList(), asList(user), approved, Optional.empty(), 100, false);
     }
 
     private CommitFilter createFilter(Optional<String> lastCommitId, int limit) {
-        return new CommitFilter(TEAM, asList(REPOSITORY), asList(COMMIT_AUTHOR), asList(), true, lastCommitId, limit);
+        return new CommitFilter(TEAM, asList(REPOSITORY), asList(COMMIT_AUTHOR), asList(), true, lastCommitId, limit, false);
     }
 
     private Commit insertWithComment(Commit dummyElement) {

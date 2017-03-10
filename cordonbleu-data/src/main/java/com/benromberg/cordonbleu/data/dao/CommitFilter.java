@@ -14,11 +14,12 @@ public class CommitFilter {
     private final List<CommitAuthor> authors;
     private final List<User> users;
     private final boolean approved;
+    private final boolean collectiveReview;
     private final Optional<String> lastCommitHash;
     private final int limit;
 
     public CommitFilter(Team team, List<CodeRepositoryMetadata> repositories, List<CommitAuthor> authors,
-            List<User> users, boolean approved, Optional<String> lastCommitHash, int limit) {
+            List<User> users, boolean approved, Optional<String> lastCommitHash, int limit, boolean collectiveReview) {
         this.team = team;
         this.repositories = repositories;
         this.authors = authors;
@@ -26,6 +27,7 @@ public class CommitFilter {
         this.approved = approved;
         this.lastCommitHash = lastCommitHash;
         this.limit = limit;
+        this.collectiveReview=collectiveReview;
     }
 
     public Team getTeam() {
@@ -48,7 +50,11 @@ public class CommitFilter {
         return approved;
     }
 
-    public Optional<String> getLastCommitHash() {
+    public boolean isCollectiveReview() {
+		return collectiveReview;
+	}
+
+	public Optional<String> getLastCommitHash() {
         return lastCommitHash;
     }
 
