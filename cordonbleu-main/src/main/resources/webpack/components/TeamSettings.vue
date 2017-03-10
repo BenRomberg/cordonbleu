@@ -42,7 +42,12 @@ module.exports = {
     saveTeam: function(event) {
       delete this.team.permissions
       delete this.team.publicKey
-      this.ajaxPost('/team/update', this.team, data => {
+      this.ajaxPost('/team/update', 
+      	{
+      		flags: this.team.flags,
+      		id: this.team.id,
+      		name: this.team.name
+      		}, data => {
         ga('send', 'event', 'team', 'update', 'success')
         this.setActiveTeam(data)
         this.$router.go({ name: 'team-settings', params: { teamName: data.name } })
