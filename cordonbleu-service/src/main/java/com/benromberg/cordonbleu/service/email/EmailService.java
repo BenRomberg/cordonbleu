@@ -1,7 +1,12 @@
 package com.benromberg.cordonbleu.service.email;
 
-import static java.util.stream.Collectors.toList;
 import com.benromberg.cordonbleu.data.model.User;
+
+import org.codemonkey.simplejavamail.Email;
+import org.codemonkey.simplejavamail.Mailer;
+import org.codemonkey.simplejavamail.TransportStrategy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -14,27 +19,21 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.mail.Message.RecipientType;
 
-import org.codemonkey.simplejavamail.Email;
-import org.codemonkey.simplejavamail.Mailer;
-import org.codemonkey.simplejavamail.TransportStrategy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static java.util.stream.Collectors.toList;
 
 @Singleton
 public class EmailService {
     private static final Logger LOGGER = LoggerFactory.getLogger(EmailService.class);
 
     private final Mailer mailer;
+    private final EmailConfiguration configuration;
     private final Queue<Email> emailQueue = new ConcurrentLinkedQueue<>();
-    private final String rootPath;
-    private final String sharedCss;
 
     @Inject
     public EmailService(EmailConfiguration configuration) {
         mailer = new Mailer(configuration.getHost(), configuration.getPort(), configuration.getUsername(),
                 configuration.getPassword(), TransportStrategy.SMTP_TLS);
-        rootPath = configuration.getRootPath();
-        sharedCss = configuration.getSharedCss();
+        this.configuration = configuration;
     }
 
     public void queueEmail(Collection<String> to, User replyTo, EmailTemplate template) {
@@ -42,12 +41,12 @@ public class EmailService {
             return;
         }
         Email email = new Email();
-        email.setFromAddress("Cordon Bleu", "info@cordonbleu.io");
+        email.setFromAddress("Cordon Bleu", configuration.getFromAddress());
         email.setSubject(template.getSubject());
         email.setReplyToAddress(null, replyTo.getEmail());
         to.stream().forEach(recipient -> email.addRecipient(null, recipient, RecipientType.TO));
         email.setText(template.getPlainBody());
-        email.setTextHTML(template.getHtmlBody(sharedCss));
+        email.setTextHTML(template.getHtmlBody(configuration.getSharedCss()));
         emailQueue.add(email);
     }
 
@@ -76,6 +75,6 @@ public class EmailService {
     }
 
     public String getRootPath() {
-        return rootPath;
+        return configuration.getRootPath();
     }
 }

@@ -20,6 +20,7 @@
     "port": 587,
     "username": "smtp_user",
     "password": "smtp_password",
+    "fromAddress": "cordonbleu@example.com",                    // the email address used in the "From" header
     "rootPath": "http://example.com"                            // the web url that will be used in emails
   },
   "sshPrivateKeyPassword": "something-entirely-random"          // private keys will be encrypted using this password,

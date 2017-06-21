@@ -1,18 +1,21 @@
 package com.benromberg.cordonbleu.service.email;
 
 public class EmailConfiguration {
-    private String host;
-    private int port;
-    private String username;
-    private String password;
-    private String rootPath;
-    private String sharedCss;
+    private final String host;
+    private final int port;
+    private final String username;
+    private final String password;
+    private final String fromAddress;
+    private final String rootPath;
+    private final String sharedCss;
 
-    public EmailConfiguration(String host, int port, String username, String password, String rootPath, String sharedCss) {
+    public EmailConfiguration(String host, int port, String username, String password, String fromAddress, String rootPath,
+            String sharedCss) {
         this.host = host;
         this.port = port;
         this.username = username;
         this.password = password;
+        this.fromAddress = fromAddress;
         this.rootPath = rootPath;
         this.sharedCss = sharedCss;
     }
@@ -31,6 +34,10 @@ public class EmailConfiguration {
 
     public String getPassword() {
         return password;
+    }
+
+    public String getFromAddress() {
+        return fromAddress;
     }
 
     public String getRootPath() {

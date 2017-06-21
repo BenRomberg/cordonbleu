@@ -18,6 +18,7 @@
     "port": 587,
     "username": "",
     "password": "",
+    "fromAddress": "cordonbleu@example.com",
     "rootPath": "http://cordonbleu.io"
   },
   "sshPrivateKeyPassword": "coagluFia1leCHiE2ouwRludRi0GIEJI"

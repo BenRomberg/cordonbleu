@@ -1,8 +1,15 @@
 package com.benromberg.cordonbleu.service.email;
 
-import static com.benromberg.cordonbleu.util.ExceptionUtil.convertException;
-import static java.util.Arrays.asList;
-import static java.util.stream.Collectors.toList;
+import com.google.common.net.MediaType;
+
+import com.benromberg.cordonbleu.data.model.User;
+import com.icegreen.greenmail.junit.GreenMailRule;
+import com.icegreen.greenmail.util.ServerSetup;
+import com.icegreen.greenmail.util.ServerSetupTest;
+
+import org.junit.rules.TestRule;
+import org.junit.runner.Description;
+import org.junit.runners.model.Statement;
 
 import java.io.IOException;
 import java.util.List;
@@ -15,23 +22,18 @@ import javax.mail.MessagingException;
 import javax.mail.Multipart;
 import javax.mail.internet.MimeMessage;
 
-import org.junit.rules.TestRule;
-import org.junit.runner.Description;
-import org.junit.runners.model.Statement;
-
-import com.benromberg.cordonbleu.data.model.User;
-import com.google.common.net.MediaType;
-import com.icegreen.greenmail.junit.GreenMailRule;
-import com.icegreen.greenmail.util.ServerSetup;
-import com.icegreen.greenmail.util.ServerSetupTest;
+import static com.benromberg.cordonbleu.util.ExceptionUtil.convertException;
+import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
 
 public class EmailRule implements TestRule {
     public static final String EMAIL_ROOT_PATH = "http://benromberg.com/cordonbleu";
     private static final ServerSetup EMAIL_SERVER = ServerSetupTest.SMTP;
 
     private final GreenMailRule greenMail = new GreenMailRule(EMAIL_SERVER);
-    private final EmailService emailService = new EmailService(new EmailConfiguration(EMAIL_SERVER.getBindAddress(),
-            EMAIL_SERVER.getPort(), "", "", EMAIL_ROOT_PATH, ""));
+    private final EmailService emailService = new EmailService(
+            new EmailConfiguration(EMAIL_SERVER.getBindAddress(), EMAIL_SERVER.getPort(), "", "", "cordonbleu@example.com", EMAIL_ROOT_PATH,
+                    ""));
 
     @Override
     public Statement apply(Statement base, Description description) {
