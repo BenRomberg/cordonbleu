@@ -72,6 +72,10 @@ public class HighlightedCommit {
     public Optional<CommitApproval> getApproval() {
         return commit.getApproval();
     }
+    
+    public boolean getProposeToCollectiveReview() {
+    	return commit.getProposeToCollectiveReview();
+    }
 
     public List<HighlightedComment> getComments() {
         return comments;

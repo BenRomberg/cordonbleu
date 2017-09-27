@@ -71,6 +71,8 @@ th.icon {
       select#author-dropdown.btn-primary(multiple="multiple")
       div#show-approved-checkbox.checkbox
         label <input type="checkbox" v-model="showApproved" @change="updateApproved()"> Show Approved
+      div#show-collective-review-checkbox.checkbox
+        label <input type="checkbox" v-model="showCollectiveReviewOnly" @change="updateCollectiveReview()"> Show Collective Review
       div#refresh-commit-list(v-if="refreshCount > 0")
         button.btn.btn-info.btn-xs(@click="updateList()")
           <span class="badge">{{refreshCount}}</span> new commit{{refreshCount | toPluralS}} available
@@ -103,6 +105,7 @@ module.exports = {
     return {
       commits: [],
       showApproved: true,
+      showCollectiveReviewOnly: false,
       initialized: false,
       shiftKeyPressed: false,
       refreshCount: 0,
@@ -142,6 +145,10 @@ module.exports = {
   methods: {
     updateApproved: function() {
       ga('send', 'event', 'commitList', 'showApproved', this.showApproved)
+      this.updateList()
+    },
+    updateCollectiveReview :function() {
+      ga('send', 'event', 'commitList', 'showCollectiveReviewOnly', this.showCollectiveReviewOnly)
       this.updateList()
     },
     initializeList: function(filter) {
@@ -243,6 +250,7 @@ module.exports = {
         author: authorAllOptions.filter(author => typeof author === 'object'),
         user: authorAllOptions.filter(author => typeof author === 'string'),
         approved: this.showApproved,
+        collectiveReviewOnly: this.showCollectiveReviewOnly,
         lastCommitHash: this.commits.length == 0 || fetchUpdates ? null : this.commits[this.commits.length - 1].hash,
         limit: limit || LIMIT
       }

@@ -38,6 +38,10 @@ public class CommitService {
     public boolean revertApproval(CommitId commitId) {
         return updateApproval(commitId, Optional.empty()).isPresent();
     }
+    
+    public void proposeToCollectiveReview(CommitId commitId, boolean value) {
+    	commitDao.updateProposetoCollectiveReview(commitId, value);
+    }
 
     public Optional<Commit> findById(RawCommitId rawCommitId) {
         CommitId commitId = rawCommitId.toCommitId(teamDao);

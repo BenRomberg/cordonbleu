@@ -18,6 +18,7 @@ public class Commit extends Entity<CommitId> {
     public static final String COMMENTS_PROPERTY = "comments";
     public static final String REPOSITORIES_PROPERTY = "repositories";
     public static final String CREATED_PROPERTY = "created";
+    public static final String COLLECTIVE_REVIEW = "proposeToCollectiveReview";
 
     @JsonProperty(REPOSITORIES_PROPERTY)
     private final List<CommitRepository> repositories;
@@ -40,11 +41,15 @@ public class Commit extends Entity<CommitId> {
     @JsonProperty(REMOVED_PROPERTY)
     private final boolean removed;
 
+    @JsonProperty(COLLECTIVE_REVIEW)
+    private final boolean proposeToCollectiveReview;
+    
     @JsonCreator
     private Commit(CommitId id, @JsonProperty(REPOSITORIES_PROPERTY) List<CommitRepository> repositories,
             @JsonProperty(AUTHOR_PROPERTY) CommitAuthor author, @JsonProperty(CREATED_PROPERTY) LocalDateTime created,
             String message, @JsonProperty(APPROVAL_PROPERTY) Optional<CommitApproval> approval,
-            @JsonProperty(COMMENTS_PROPERTY) List<Comment> comments, @JsonProperty(REMOVED_PROPERTY) boolean removed) {
+            @JsonProperty(COMMENTS_PROPERTY) List<Comment> comments, @JsonProperty(REMOVED_PROPERTY) boolean removed, 
+            @JsonProperty(COLLECTIVE_REVIEW) boolean proposeToCollectiveReview) {
         super(id);
         this.repositories = repositories;
         this.author = author;
@@ -53,11 +58,12 @@ public class Commit extends Entity<CommitId> {
         this.approval = approval;
         this.comments = comments;
         this.removed = removed;
+        this.proposeToCollectiveReview = proposeToCollectiveReview;
     }
 
     public Commit(CommitId id, List<CommitRepository> repositories, CommitAuthor author, LocalDateTime created,
             String message) {
-        this(id, repositories, author, created, message, empty(), emptyList(), false);
+        this(id, repositories, author, created, message, empty(), emptyList(), false, false);
     }
 
     public CommitAuthor getAuthor() {
@@ -87,4 +93,10 @@ public class Commit extends Entity<CommitId> {
     public boolean isRemoved() {
         return removed;
     }
+
+	public boolean getProposeToCollectiveReview() {
+		return proposeToCollectiveReview;
+	}
+    
+    
 }

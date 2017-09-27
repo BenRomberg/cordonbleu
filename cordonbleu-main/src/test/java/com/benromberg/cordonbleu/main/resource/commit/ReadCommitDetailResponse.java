@@ -27,6 +27,9 @@ public class ReadCommitDetailResponse {
 
     @JsonProperty
     private final Optional<ReadCommitApprovalResponse> approval;
+    
+    @JsonProperty
+    private final boolean collectiveReview;
 
     @JsonProperty
     private final List<ReadCommitFileResponse> files;
@@ -34,7 +37,7 @@ public class ReadCommitDetailResponse {
     @JsonCreator
     public ReadCommitDetailResponse(ReadCommitAuthorResponse author, String hash, LocalDateTime created,
             List<ReadCommitRepository> repositories, String messageAsHtml,
-            Optional<ReadCommitApprovalResponse> approval, List<ReadCommitFileResponse> files) {
+            Optional<ReadCommitApprovalResponse> approval, List<ReadCommitFileResponse> files, boolean collectiveReview) {
         this.author = author;
         this.hash = hash;
         this.created = created;
@@ -42,6 +45,7 @@ public class ReadCommitDetailResponse {
         this.messageAsHtml = messageAsHtml;
         this.approval = approval;
         this.files = files;
+        this.collectiveReview=collectiveReview;
     }
 
     public ReadCommitAuthorResponse getAuthor() {
@@ -71,4 +75,9 @@ public class ReadCommitDetailResponse {
     public List<ReadCommitFileResponse> getFiles() {
         return files;
     }
+
+	public boolean isCollectiveReview() {
+		return collectiveReview;
+	}
+    
 }

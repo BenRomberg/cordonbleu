@@ -14,6 +14,7 @@ public class CommitDetailResponse {
     private final HighlightedCommit commit;
     private final List<CommitFileResponse> files;
     private final Optional<CommitApprovalResponse> approval;
+    private final boolean collectiveReview;
     private final CommitAuthorResponse author;
     private final List<CommitRepositoryResponse> repositories;
 
@@ -23,6 +24,7 @@ public class CommitDetailResponse {
         approval = commit.getApproval().map(commitApproval -> new CommitApprovalResponse(commitApproval));
         author = new CommitAuthorResponse(commit.getAuthor());
         repositories = commit.getRepositories().stream().map(CommitRepositoryResponse::new).collect(toList());
+        this.collectiveReview = commit.getProposeToCollectiveReview();
     }
 
     @JsonProperty
@@ -58,5 +60,10 @@ public class CommitDetailResponse {
     @JsonProperty
     public List<CommitFileResponse> getFiles() {
         return files;
+    }
+    
+    @JsonProperty
+    public boolean getCollectiveReview() {
+    	return this.collectiveReview;
     }
 }
