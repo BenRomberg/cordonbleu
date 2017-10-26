@@ -8,6 +8,7 @@ import java.util.Optional;
 import com.benromberg.cordonbleu.service.coderepository.CodeRepository;
 import com.benromberg.cordonbleu.service.coderepository.CodeRepositoryFactory;
 import com.benromberg.cordonbleu.service.coderepository.keypair.SshPrivateKeyPasswordProvider;
+import com.benromberg.cordonbleu.service.coderepository.svncredential.SvnCredentialProvider;
 
 public class CodeRepositoryFactoryMock implements CodeRepositoryFactory {
     private File lastFolder;
@@ -26,7 +27,7 @@ public class CodeRepositoryFactoryMock implements CodeRepositoryFactory {
 
     @Override
     public CodeRepository createCodeRepository(CodeRepositoryMetadata repository, File folder,
-            SshPrivateKeyPasswordProvider sshPrivateKeyPasswordProvider) {
+                                               SshPrivateKeyPasswordProvider sshPrivateKeyPasswordProvider, SvnCredentialProvider svnCredentialProvider) {
         lastFolder = folder;
         if (defaultRepositoryMetadata.isPresent() && repository.equals(defaultRepositoryMetadata.get())) {
             return defaultRepository.get();

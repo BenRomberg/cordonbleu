@@ -11,9 +11,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class CodeRepositoryMetadata extends NamedEntity {
     public static final String TEAM_PROPERTY = "team";
     public static final String FLAGS_PROPERTY = "flags";
+    public static final String TYPE_GIT = "git";
+    public static final String TYPE_SVN = "svn";
 
     @JsonProperty
     private final String sourceUrl;
+
+    @JsonProperty(required = false)
+    private final String type;
 
     @JsonProperty(FLAGS_PROPERTY)
     private final List<RepositoryFlag> flags;
@@ -21,17 +26,18 @@ public class CodeRepositoryMetadata extends NamedEntity {
     @JsonProperty(TEAM_PROPERTY)
     private final Team team;
 
-    public CodeRepositoryMetadata(String sourceUrl, @JsonProperty(NAME_PROPERTY) String name, Team team) {
-        this(RandomIdGenerator.generate(), sourceUrl, name, asList(), team);
+    public CodeRepositoryMetadata(String sourceUrl, @JsonProperty(NAME_PROPERTY) String name, Team team, String type) {
+        this(RandomIdGenerator.generate(), sourceUrl, name, asList(), team, type);
     }
 
     @JsonCreator
     private CodeRepositoryMetadata(String id, String sourceUrl, @JsonProperty(NAME_PROPERTY) String name,
-            @JsonProperty(FLAGS_PROPERTY) List<RepositoryFlag> flags, Team team) {
+            @JsonProperty(FLAGS_PROPERTY) List<RepositoryFlag> flags, Team team, String type) {
         super(id, name);
         this.sourceUrl = sourceUrl;
         this.flags = flags;
         this.team = team;
+        this.type= type;
     }
 
     public String getSourceUrl() {
@@ -44,5 +50,9 @@ public class CodeRepositoryMetadata extends NamedEntity {
 
     public Team getTeam() {
         return team;
+    }
+
+    public String getType() {
+        return type;
     }
 }

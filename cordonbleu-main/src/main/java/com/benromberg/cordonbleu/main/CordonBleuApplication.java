@@ -38,6 +38,10 @@ public class CordonBleuApplication extends Application<CordonBleuConfiguration> 
     private final Module module;
 
     public static void main(String[] args) throws Exception {
+        for(String bla : args)
+            System.out.println(bla);
+        /*String[] arg = new String[1];
+        arg[0]="C:\\Users\\ndeblock\\dev\\tmp\\qualitydashboard\\conf\\configuration.json";*/
         new CordonBleuApplication(new GuiceModule()).run(args);
     }
 

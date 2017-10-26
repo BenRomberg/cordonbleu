@@ -13,9 +13,10 @@ import com.benromberg.cordonbleu.data.validation.NameValidation;
 import com.benromberg.cordonbleu.data.validation.UserValidation;
 import com.benromberg.cordonbleu.service.coderepository.CodeRepositoryFactory;
 import com.benromberg.cordonbleu.service.coderepository.CodeRepositoryService.CodeRepositoryFolderProvider;
-import com.benromberg.cordonbleu.service.coderepository.GitRepositoryFactory;
+import com.benromberg.cordonbleu.service.coderepository.RepositoryFactory;
 import com.benromberg.cordonbleu.service.coderepository.keypair.SshKeyPairGenerator;
 import com.benromberg.cordonbleu.service.coderepository.keypair.SshPrivateKeyPasswordProvider;
+import com.benromberg.cordonbleu.service.coderepository.svncredential.SvnCredentialProvider;
 import com.benromberg.cordonbleu.service.commit.CommitNotificationConsiderationAmount;
 import com.benromberg.cordonbleu.service.email.EmailConfiguration;
 import com.benromberg.cordonbleu.service.highlight.HighlightingTimeout;
@@ -55,7 +56,8 @@ public class GuiceModule extends AbstractModule {
         bind(CodeRepositoryFolderProvider.class).to(CordonBleuConfiguration.class);
         bind(CommitNotificationConsiderationAmount.class).to(CordonBleuConfiguration.class);
         bind(SshPrivateKeyPasswordProvider.class).to(CordonBleuConfiguration.class);
-        bind(CodeRepositoryFactory.class).to(GitRepositoryFactory.class);
+        bind(SvnCredentialProvider.class).to(CordonBleuConfiguration.class);
+        bind(CodeRepositoryFactory.class).to(RepositoryFactory.class);
         bind(KeyPairGenerator.class).to(SshKeyPairGenerator.class);
         bind(UserValidation.class).toInstance(SharedConfig.sharedConfig());
         bind(new TypeLiteral<NameValidation<NamedEntity>>() {

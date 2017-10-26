@@ -13,11 +13,15 @@ public class AddRepositoryRequest {
     @JsonProperty
     private final String sourceUrl;
 
+    @JsonProperty
+    private final String type;
+
     @JsonCreator
-    public AddRepositoryRequest(String teamId, String name, String sourceUrl) {
+    public AddRepositoryRequest(String teamId, String name, String sourceUrl, String type) {
         this.teamId = teamId;
         this.name = name;
         this.sourceUrl = sourceUrl;
+        this.type=type;
     }
 
     public String getTeamId() {
@@ -30,6 +34,10 @@ public class AddRepositoryRequest {
 
     public String getSourceUrl() {
         return sourceUrl;
+    }
+
+    public String getType() {
+        return type;
     }
 
 }

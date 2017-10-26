@@ -1,3 +1,11 @@
+Feature presentation
+
+* Review code commit by commit
+* Add a comment on line code
+* Approve a commit
+* Git and SVN support
+
+
 Installation notes:
 
 * adjust `configuration.example` as instructed in the file and rename it to `configuration.json`

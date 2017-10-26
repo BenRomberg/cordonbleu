@@ -49,7 +49,7 @@ public class RepositoryResourceTest implements RepositoryFixture {
 
     @Test
     public void listRepositories_WithRepository_ReturnsList() throws Exception {
-        repositoryService.addRepository(TEAM_ID, REPOSITORY_NAME, REPOSITORY_URL);
+        repositoryService.addRepository(TEAM_ID, REPOSITORY_NAME, REPOSITORY_URL, REPOSITORY_TYPE);
         Response response = RULE.withTeamOwnerUser().param("teamId", TEAM_ID).get("/api/repository/list");
         assertRepositoryListWithOneElement(response);
     }
@@ -58,7 +58,7 @@ public class RepositoryResourceTest implements RepositoryFixture {
     public void listRepositories_WithRepositoryInOtherTeam_ReturnsEmptyList() throws Exception {
         Team otherTeam = team().name("other-team").build();
         teamDao.insert(otherTeam);
-        repositoryService.addRepository(otherTeam.getId(), REPOSITORY_NAME, REPOSITORY_URL);
+        repositoryService.addRepository(otherTeam.getId(), REPOSITORY_NAME, REPOSITORY_URL, REPOSITORY_TYPE);
         Response response = RULE.withTeamOwnerUser().param("teamId", TEAM_ID).get("/api/repository/list");
         assertEmptyRepositoryList(response);
     }
@@ -66,21 +66,21 @@ public class RepositoryResourceTest implements RepositoryFixture {
     @Test
     public void addRepository_WithWrongTeam_YieldsNotFound() throws Exception {
         Response response = RULE.withTeamOwnerUser().post("/api/repository/add",
-                new AddRepositoryRequest("doesntExist", REPOSITORY_NAME, REPOSITORY_URL));
+                new AddRepositoryRequest("doesntExist", REPOSITORY_NAME, REPOSITORY_URL, REPOSITORY_TYPE));
         assertThat(response.getStatus()).isEqualTo(Status.NOT_FOUND.getStatusCode());
     }
 
     @Test
     public void addRepository_WithoutAuthenticatedUser_YieldsUnauthorized() throws Exception {
         Response response = RULE.post("/api/repository/add", new AddRepositoryRequest(TEAM_ID, REPOSITORY_NAME,
-                REPOSITORY_URL));
+                REPOSITORY_URL, REPOSITORY_TYPE));
         assertThat(response.getStatus()).isEqualTo(Status.UNAUTHORIZED.getStatusCode());
     }
 
     @Test
     public void addRepository_WithoutPermission_YieldsForbiddenWithNoRepositoryAdded() throws Exception {
         Response response = RULE.withTeamUser().post("/api/repository/add",
-                new AddRepositoryRequest(TEAM_ID, REPOSITORY_NAME, REPOSITORY_URL));
+                new AddRepositoryRequest(TEAM_ID, REPOSITORY_NAME, REPOSITORY_URL, REPOSITORY_TYPE));
         assertThat(response.getStatus()).isEqualTo(Status.FORBIDDEN.getStatusCode());
         assertThat(repositoryService.findByTeam(TEAM)).isEmpty();
     }
@@ -88,15 +88,15 @@ public class RepositoryResourceTest implements RepositoryFixture {
     @Test
     public void addRepository_WithTeamOwner_ReturnsList() throws Exception {
         Response response = RULE.withTeamOwnerUser().post("/api/repository/add",
-                new AddRepositoryRequest(TEAM_ID, REPOSITORY_NAME, REPOSITORY_URL));
+                new AddRepositoryRequest(TEAM_ID, REPOSITORY_NAME, REPOSITORY_URL, REPOSITORY_TYPE));
         assertRepositoryListWithOneElement(response);
     }
 
     @Test
     public void addRepository_WithDuplicateName_YieldsConflict() throws Exception {
-        repositoryService.addRepository(TEAM_ID, REPOSITORY_NAME, REPOSITORY_URL);
+        repositoryService.addRepository(TEAM_ID, REPOSITORY_NAME, REPOSITORY_URL, REPOSITORY_TYPE);
         Response response = RULE.withTeamOwnerUser().post("/api/repository/add",
-                new AddRepositoryRequest(TEAM_ID, REPOSITORY_NAME, REPOSITORY_URL));
+                new AddRepositoryRequest(TEAM_ID, REPOSITORY_NAME, REPOSITORY_URL, REPOSITORY_TYPE));
         assertThat(response.getStatus()).isEqualTo(Status.CONFLICT.getStatusCode());
     }
 
@@ -109,7 +109,7 @@ public class RepositoryResourceTest implements RepositoryFixture {
 
     @Test
     public void deleteRepository_WithoutPermission_YieldsForbiddenWithNoRepositoryDeleted() throws Exception {
-        CodeRepositoryMetadata repository = repositoryService.addRepository(TEAM_ID, REPOSITORY_NAME, REPOSITORY_URL);
+        CodeRepositoryMetadata repository = repositoryService.addRepository(TEAM_ID, REPOSITORY_NAME, REPOSITORY_URL, REPOSITORY_TYPE);
         Response response = RULE.withTeamUser().post("/api/repository/delete",
                 new DeleteRepositoryRequest(repository.getId(), TEAM_ID));
         assertThat(response.getStatus()).isEqualTo(Status.FORBIDDEN.getStatusCode());
@@ -124,7 +124,7 @@ public class RepositoryResourceTest implements RepositoryFixture {
 
     @Test
     public void deleteRepository_WithNonExistingRepository_DoesNothing() throws Exception {
-        repositoryService.addRepository(TEAM_ID, REPOSITORY_NAME, REPOSITORY_URL);
+        repositoryService.addRepository(TEAM_ID, REPOSITORY_NAME, REPOSITORY_URL, REPOSITORY_TYPE);
         Response response = RULE.withTeamOwnerUser().post("/api/repository/delete",
                 new DeleteRepositoryRequest("non-existing-id", TEAM_ID));
         assertRepositoryListWithOneElement(response);
@@ -132,7 +132,7 @@ public class RepositoryResourceTest implements RepositoryFixture {
 
     @Test
     public void deleteRepository_WithExistingRepository_DeletesRepository() throws Exception {
-        CodeRepositoryMetadata repository = repositoryService.addRepository(TEAM_ID, REPOSITORY_NAME, REPOSITORY_URL);
+        CodeRepositoryMetadata repository = repositoryService.addRepository(TEAM_ID, REPOSITORY_NAME, REPOSITORY_URL, REPOSITORY_TYPE);
         Response response = RULE.withTeamOwnerUser().post("/api/repository/delete",
                 new DeleteRepositoryRequest(repository.getId(), TEAM_ID));
         assertEmptyRepositoryList(response);
@@ -143,7 +143,7 @@ public class RepositoryResourceTest implements RepositoryFixture {
         Team otherTeam = team().name("other-team").build();
         teamDao.insert(otherTeam);
         CodeRepositoryMetadata repository = repositoryService.addRepository(otherTeam.getId(), REPOSITORY_NAME,
-                REPOSITORY_URL);
+                REPOSITORY_URL, REPOSITORY_TYPE);
         Response response = RULE.withTeamOwnerUser().post("/api/repository/delete",
                 new DeleteRepositoryRequest(repository.getId(), otherTeam.getId()));
         assertThat(response.getStatus()).isEqualTo(Status.FORBIDDEN.getStatusCode());

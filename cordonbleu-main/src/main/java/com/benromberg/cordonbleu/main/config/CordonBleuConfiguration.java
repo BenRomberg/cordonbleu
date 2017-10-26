@@ -3,6 +3,7 @@ package com.benromberg.cordonbleu.main.config;
 import com.benromberg.cordonbleu.data.util.jackson.IgnoreSuperClassFields;
 import com.benromberg.cordonbleu.service.coderepository.CodeRepositoryService.CodeRepositoryFolderProvider;
 import com.benromberg.cordonbleu.service.coderepository.keypair.SshPrivateKeyPasswordProvider;
+import com.benromberg.cordonbleu.service.coderepository.svncredential.SvnCredentialProvider;
 import com.benromberg.cordonbleu.service.commit.CommitNotificationConsiderationAmount;
 import com.benromberg.cordonbleu.service.email.EmailConfiguration;
 import com.benromberg.cordonbleu.service.highlight.HighlightingTimeout;
@@ -15,7 +16,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class CordonBleuConfiguration extends Configuration implements CodeRepositoryFolderProvider, HighlightingTimeout,
-        CommitNotificationConsiderationAmount, SshPrivateKeyPasswordProvider {
+        CommitNotificationConsiderationAmount, SshPrivateKeyPasswordProvider, SvnCredentialProvider {
     @JsonProperty
     private final File codeRepositoryFolder;
 
@@ -37,11 +38,14 @@ public class CordonBleuConfiguration extends Configuration implements CodeReposi
     @JsonProperty
     private final String sshPrivateKeyPassword;
 
+    @JsonProperty
+    private final SvnConfiguration svn;
+
     @JsonCreator
     @IgnoreSuperClassFields
     private CordonBleuConfiguration(File codeRepositoryFolder, String mongoUrl, EmailServer emailServer,
             long highlightingTimeoutInMilliseconds, int commitNotificationConsiderationAmount,
-            Optional<Credentials> globalCredentials, String sshPrivateKeyPassword) {
+            Optional<Credentials> globalCredentials, String sshPrivateKeyPassword, SvnConfiguration svn) {
         this.codeRepositoryFolder = codeRepositoryFolder;
         this.mongoUrl = mongoUrl;
         this.emailServer = emailServer;
@@ -49,6 +53,7 @@ public class CordonBleuConfiguration extends Configuration implements CodeReposi
         this.commitNotificationConsiderationAmount = commitNotificationConsiderationAmount;
         this.globalCredentials = globalCredentials;
         this.sshPrivateKeyPassword = sshPrivateKeyPassword;
+        this.svn = svn;
     }
 
     public String getMongoUrl() {
@@ -82,5 +87,15 @@ public class CordonBleuConfiguration extends Configuration implements CodeReposi
     @Override
     public String getSshPrivateKeyPassword() {
         return sshPrivateKeyPassword;
+    }
+
+    @Override
+    public String getSvnUser() {
+        return svn.getUser();
+    }
+
+    @Override
+    public String getSvnPassword() {
+        return svn.getPassword();
     }
 }

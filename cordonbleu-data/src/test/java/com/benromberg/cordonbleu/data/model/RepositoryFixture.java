@@ -6,6 +6,8 @@ import com.benromberg.cordonbleu.data.model.Team;
 public interface RepositoryFixture extends TeamFixture {
     String REPOSITORY_NAME = "repository-name";
     String REPOSITORY_URL = "repository.url";
+    String REPOSITORY_TYPE = "repository.git";
+
     CodeRepositoryMetadata REPOSITORY = new RepositoryBuilder().build();
     String REPOSITORY_ID = REPOSITORY.getId();
 
@@ -16,6 +18,7 @@ public interface RepositoryFixture extends TeamFixture {
     static class RepositoryBuilder {
         private String name = REPOSITORY_NAME;
         private String sourceUrl = REPOSITORY_URL;
+        private String type = REPOSITORY_TYPE;
         private Team team = TEAM;
 
         public RepositoryBuilder name(String name) {
@@ -34,7 +37,7 @@ public interface RepositoryFixture extends TeamFixture {
         }
 
         public CodeRepositoryMetadata build() {
-            return new CodeRepositoryMetadata(sourceUrl, name, team);
+            return new CodeRepositoryMetadata(sourceUrl, name, team, type);
         }
     }
 }

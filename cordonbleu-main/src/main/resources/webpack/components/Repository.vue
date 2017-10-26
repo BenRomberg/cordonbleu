@@ -15,16 +15,22 @@
         label.sr-only(for="repository-name") Name
         input#repository-name.form-control(v-model="repositoryName" placeholder="Name")
       div.form-group
+        select#repository-type.form-control(v-model="repositoryType" placeholder="SCM Type")
+            option git
+            option svn
+      div.form-group
         label.sr-only(for="repository-source-url") Source URL
         input#repository-source-url.form-control(v-model="repositorySourceUrl" placeholder="Source URL" size=50)
       button.btn.btn-primary(type="submit" @click.prevent="addRepository($event)") Add
     table#repository-list.table.table-bordered.table-striped.table-hover
       tr
         th Name
+        th Type
         th Source URL
         th
       tr(v-for="repository in repositories")
         td {{repository.name}}
+        td {{repository.type}}
         td {{repository.sourceUrl}}
         td
           button.btn.btn-danger.btn-sm.fa.fa-trash(@click="confirmDeleteRepository(repository, $event)")
@@ -64,6 +70,7 @@ module.exports = {
       this.ajaxPost('/repository/add', {
         teamId: this.activeTeam.id,
         name: this.repositoryName,
+        type: this.repositoryType,
         sourceUrl: this.repositorySourceUrl
       }, data => {
         ga('send', 'event', 'repository', 'add', 'success')
