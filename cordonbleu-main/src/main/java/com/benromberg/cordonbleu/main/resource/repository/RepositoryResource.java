@@ -45,7 +45,7 @@ public class RepositoryResource {
     @Timed
     public List<RepositoryResponse> addRepository(@Auth UserWithPermissions user, AddRepositoryRequest request) {
         Team team = repositoryPermissionGuard.guardManageRepositories(user, request.getTeamId());
-        repositoryService.addRepository(request.getTeamId(), request.getName(), request.getSourceUrl());
+        repositoryService.addRepository(request.getTeamId(), request.getName(), request.getSourceUrl(), request.getType());
         return findRepositories(team);
     }
 

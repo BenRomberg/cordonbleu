@@ -34,8 +34,10 @@ public class PreventDefaultConstructorDelegateValueInstantiator extends ValueIns
     public Object createFromObjectWith(DeserializationContext ctxt, Object[] args) throws IOException {
         int nullValueIndex;
         if ((nullValueIndex = nullValueIndex(asList(args))) >= 0) {
-            Type parameterType = delegate.getWithArgsCreator().getParameter(nullValueIndex).getGenericType();
-            throw createException(String.format("null creator parameter of type %s not allowed.", parameterType));
+            if(!"com.benromberg.cordonbleu.data.model.CodeRepositoryMetadata".equals(delegate.getWithArgsCreator().getContextClass().getName())) { // TODO see to delete it :/ (it's probably due to null value on new attribute `type` on database)
+                Type parameterType = delegate.getWithArgsCreator().getParameter(nullValueIndex).getGenericType();
+                throw createException(String.format("null creator parameter of type %s not allowed.", parameterType));
+            }
         }
         long fieldCount = countFields();
         if (args.length != fieldCount) {

@@ -14,7 +14,7 @@ public class CodeRepositoryServiceMock extends CodeRepositoryService {
     private final String pathAfter;
 
     public CodeRepositoryServiceMock(String pathBefore, String pathAfter) {
-        super(null, () -> null, null, null, null, null, null);
+        super(null, () -> null, null, null, null, null, null, null);
         this.pathBefore = pathBefore;
         this.pathAfter = pathAfter;
     }

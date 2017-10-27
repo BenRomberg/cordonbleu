@@ -55,7 +55,7 @@ public class CodeRepositoryServiceTest implements CommitFixture {
         codeRepositoryFactory = new CodeRepositoryFactoryMock(REPOSITORY);
         codeRepository = codeRepositoryFactory.getDefaultRepository();
         service = new CodeRepositoryService(codeRepositoryFactory, () -> temporaryFolder.getRoot(), repositoryDao,
-                commitDao, userDao, databaseRule.createTeamDao(), () -> "");
+                commitDao, userDao, databaseRule.createTeamDao(), () -> "", null);
     }
 
     @Test
@@ -121,7 +121,7 @@ public class CodeRepositoryServiceTest implements CommitFixture {
 
     @Test
     public void addingRepository_CanBeFoundWithGetRepositories() throws Exception {
-        service.addRepository(TEAM_ID, REPOSITORY_NAME, REPOSITORY_URL);
+        service.addRepository(TEAM_ID, REPOSITORY_NAME, REPOSITORY_URL, REPOSITORY_TYPE);
         List<CodeRepositoryMetadata> repositories = service.findByTeam(TEAM);
         assertThat(repositories).extracting(CodeRepositoryMetadata::getName, CodeRepositoryMetadata::getSourceUrl)
                 .containsExactly(tuple(REPOSITORY_NAME, REPOSITORY_URL));

@@ -21,5 +21,9 @@
     "fromAddress": "cordonbleu@example.com",
     "rootPath": "http://cordonbleu.io"
   },
-  "sshPrivateKeyPassword": "coagluFia1leCHiE2ouwRludRi0GIEJI"
+  "sshPrivateKeyPassword": "coagluFia1leCHiE2ouwRludRi0GIEJI",
+  "svn" : {
+    "user" : "",
+    "password" : ""
+  }
 }

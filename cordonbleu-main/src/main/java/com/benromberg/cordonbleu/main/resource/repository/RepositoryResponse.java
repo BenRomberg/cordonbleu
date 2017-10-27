@@ -26,4 +26,7 @@ public class RepositoryResponse {
         return repository.getSourceUrl().toString();
     }
 
+    @JsonProperty
+    public String getType() { return (repository.getType() == null)  ? "git" : repository.getType().toString(); }
+
 }

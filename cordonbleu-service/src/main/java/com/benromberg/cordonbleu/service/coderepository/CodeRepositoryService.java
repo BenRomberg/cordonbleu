@@ -21,6 +21,7 @@ import java.util.function.Consumer;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import com.benromberg.cordonbleu.service.coderepository.svncredential.SvnCredentialProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,17 +38,19 @@ public class CodeRepositoryService {
     private final UserDao userDao;
     private final TeamDao teamDao;
     private final SshPrivateKeyPasswordProvider sshPrivateKeyPasswordProvider;
+    private final SvnCredentialProvider svnCredentialProvider;
 
     @Inject
     public CodeRepositoryService(CodeRepositoryFactory codeRepositoryFactory,
-            CodeRepositoryFolderProvider folderProvider, CodeRepositoryMetadataDao repositoryDao, CommitDao commitDao,
-            UserDao userDao, TeamDao teamDao, SshPrivateKeyPasswordProvider sshPrivateKeyPasswordProvider) {
+                                 CodeRepositoryFolderProvider folderProvider, CodeRepositoryMetadataDao repositoryDao, CommitDao commitDao,
+                                 UserDao userDao, TeamDao teamDao, SshPrivateKeyPasswordProvider sshPrivateKeyPasswordProvider, SvnCredentialProvider svnCredentialProvider) {
         this.codeRepositoryFactory = codeRepositoryFactory;
         this.repositoryDao = repositoryDao;
         this.commitDao = commitDao;
         this.userDao = userDao;
         this.teamDao = teamDao;
         this.sshPrivateKeyPasswordProvider = sshPrivateKeyPasswordProvider;
+        this.svnCredentialProvider = svnCredentialProvider;
         this.folder = folderProvider.getCodeRepositoryFolder();
     }
 
@@ -117,15 +120,15 @@ public class CodeRepositoryService {
 
     private CodeRepository getRepository(CodeRepositoryMetadata metadata) {
         return codeRepositoryFactory.createCodeRepository(metadata, new File(folder, metadata.getId()),
-                sshPrivateKeyPasswordProvider);
+                sshPrivateKeyPasswordProvider, svnCredentialProvider);
     }
 
     public List<CodeRepositoryMetadata> findByTeam(Team team) {
         return repositoryDao.findByTeam(team);
     }
 
-    public CodeRepositoryMetadata addRepository(String teamId, String name, String sourceUrl) {
-        CodeRepositoryMetadata repository = new CodeRepositoryMetadata(sourceUrl, name, teamDao.findById(teamId).get());
+    public CodeRepositoryMetadata addRepository(String teamId, String name, String sourceUrl, String type) {
+        CodeRepositoryMetadata repository = new CodeRepositoryMetadata(sourceUrl, name, teamDao.findById(teamId).get(), type);
         repositoryDao.insert(repository);
         return repository;
     }
