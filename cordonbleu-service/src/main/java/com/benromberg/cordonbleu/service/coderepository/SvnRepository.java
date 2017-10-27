@@ -146,8 +146,8 @@ public class SvnRepository implements CodeRepository, AutoCloseable {
 
         CommitId commitId = new CommitId(hash, repositoryMetadata.getTeam());
         return new CommitWithRepository(new Commit(commitId, asList(commitRepository), new CommitAuthor(logEntry.getAuthor(),
-            "TODO"), LocalDateTime.ofEpochSecond(
-            logEntry.getDate().getTime()/1000l, 0, ZoneOffset.UTC), logEntry.getMessage()), commitRepository);
+            logEntry.getAuthor()+"@cordonbleu.com"), LocalDateTime.ofEpochSecond(
+            logEntry.getDate().getTime()/1000L, 0, ZoneOffset.UTC), logEntry.getMessage()), commitRepository);
     }
 
     @Override

@@ -13,11 +13,15 @@ public class ReadRepositoryResponse {
     @JsonProperty
     private String sourceUrl;
 
+    @JsonProperty(required = false)
+    private String type;
+
     @JsonCreator
-    public ReadRepositoryResponse(String id, String name, String sourceUrl) {
+    public ReadRepositoryResponse(String id, String name, String sourceUrl, String type) {
         this.id = id;
         this.name = name;
         this.sourceUrl = sourceUrl;
+        this.type = type;
     }
 
     public String getId() {
@@ -32,4 +36,7 @@ public class ReadRepositoryResponse {
         return sourceUrl;
     }
 
+    public String getType() {
+        return type;
+    }
 }

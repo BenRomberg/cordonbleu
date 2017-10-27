@@ -156,6 +156,7 @@ public class RepositoryResourceTest implements RepositoryFixture {
         assertThat(repositories.get(0).getId()).isNotEmpty();
         assertThat(repositories.get(0).getName()).isEqualTo(REPOSITORY_NAME);
         assertThat(repositories.get(0).getSourceUrl()).isEqualTo(REPOSITORY_URL);
+        assertThat(repositories.get(0).getType()).isEqualTo(REPOSITORY_TYPE);
     }
 
     private void assertEmptyRepositoryList(Response response) {

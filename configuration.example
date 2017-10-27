@@ -26,7 +26,7 @@
   "sshPrivateKeyPassword": "something-entirely-random",          // private keys will be encrypted using this password,
                                                                 // so they're not available in "plain-text" in the database
   "svn" : {
-        "user" : ""
+        "user" : "",
         "password" : ""
   }
 }
