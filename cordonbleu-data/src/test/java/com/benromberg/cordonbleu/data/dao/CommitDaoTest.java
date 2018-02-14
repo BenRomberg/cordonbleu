@@ -20,11 +20,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import com.benromberg.cordonbleu.data.dao.CodeRepositoryMetadataDao;
-import com.benromberg.cordonbleu.data.dao.CommitDao;
-import com.benromberg.cordonbleu.data.dao.CommitFilter;
-import com.benromberg.cordonbleu.data.dao.TeamDao;
-import com.benromberg.cordonbleu.data.dao.UserDao;
 import com.benromberg.cordonbleu.data.model.CodeRepositoryMetadata;
 import com.benromberg.cordonbleu.data.model.Comment;
 import com.benromberg.cordonbleu.data.model.Commit;
@@ -52,6 +47,8 @@ public class CommitDaoTest implements CommitFixture, CommentFixture {
             .build();
     private static final User COMMIT_APPROVER = new User(COMMIT_APPROVER_EMAIL, COMMIT_APPROVER_NAME,
             "approver password");
+    private static final User COMMIT_ASSIGNEE = new User("assignee@email.com", "JackAssignee",
+            "assignee password");
 
     @Rule
     public SystemTimeRule systemTimeRule = new SystemTimeRule();
@@ -70,6 +67,7 @@ public class CommitDaoTest implements CommitFixture, CommentFixture {
     @Before
     public void setUp() {
         userDao.insert(COMMIT_APPROVER);
+        userDao.insert(COMMIT_ASSIGNEE);
     }
 
     @Test
@@ -321,6 +319,25 @@ public class CommitDaoTest implements CommitFixture, CommentFixture {
         dao.updateApproval(dummyElement.getId(), Optional.empty());
         Optional<CommitApproval> approval = dao.findById(dummyElement.getId()).get().getApproval();
         assertThat(approval).isEqualTo(Optional.empty());
+    }
+
+    @Test
+    public void setAssigneeAndFindCommit_AssigneeIsSet() throws Exception {
+        Commit dummyElement = COMMIT;
+        dao.insert(dummyElement);
+        dao.updateAssignee(dummyElement.getId(), Optional.of(COMMIT_ASSIGNEE));
+
+        assertThat(dao.findById(dummyElement.getId()).get().getAssignee().get()).isEqualToComparingFieldByField(COMMIT_ASSIGNEE);
+    }
+
+    @Test
+    public void removeAssigneeAndFindCommit_AssigneeIsNotSet() throws Exception {
+        Commit dummyElement = COMMIT;
+        dao.insert(dummyElement);
+        dao.updateAssignee(dummyElement.getId(), Optional.of(COMMIT_ASSIGNEE));
+        dao.updateAssignee(dummyElement.getId(), Optional.empty());
+
+        assertThat(dao.findById(dummyElement.getId()).get().getAssignee()).isEmpty();
     }
 
     @Test

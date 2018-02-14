@@ -90,6 +90,10 @@ public class CommitDao extends MongoDao<CommitId, Commit> {
         return update(id, DBUpdate.set(Commit.APPROVAL_PROPERTY, approval));
     }
 
+    public Optional<Commit> updateAssignee(CommitId id, Optional<User> assignee) {
+        return update(id, DBUpdate.set(Commit.ASSIGNEE, assignee));
+    }
+
     public Optional<Commit> updateComment(CommitId commitId, String commentId, String text) {
         Query find = DBQuery.is(ID_PROPERTY, commitId).is(Commit.COMMENTS_PROPERTY + "." + ID_PROPERTY, commentId);
         Builder update = DBUpdate.set(Commit.COMMENTS_PROPERTY + ".$." + Comment.TEXT_PROPERTY, text);
