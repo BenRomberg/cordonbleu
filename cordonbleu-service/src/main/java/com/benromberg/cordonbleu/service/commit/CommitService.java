@@ -39,6 +39,14 @@ public class CommitService {
         return updateApproval(commitId, Optional.empty()).isPresent();
     }
 
+    public Optional<User> assign(CommitId commitId, User user) {
+        return commitDao.updateAssignee(commitId, Optional.of(user)).flatMap(Commit::getAssignee);
+    }
+
+    public boolean revertAssignment(CommitId commitId) {
+        return commitDao.updateAssignee(commitId, Optional.empty()).isPresent();
+    }
+
     public Optional<Commit> findById(RawCommitId rawCommitId) {
         CommitId commitId = rawCommitId.toCommitId(teamDao);
         return commitDao.findById(commitId);

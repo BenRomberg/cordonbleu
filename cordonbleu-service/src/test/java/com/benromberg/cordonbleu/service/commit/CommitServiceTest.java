@@ -21,11 +21,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
-import com.benromberg.cordonbleu.service.commit.CommitNotification;
-import com.benromberg.cordonbleu.service.commit.CommitNotificationActionType;
-import com.benromberg.cordonbleu.service.commit.CommitNotifications;
-import com.benromberg.cordonbleu.service.commit.CommitService;
-
 public class CommitServiceTest implements CommitFixture, CommentFixture {
     private static final String OTHER_COMMIT_HASH = "other-commit-hash";
     private static final String APPROVE_USER_EMAIL = "approve@user.com";
@@ -99,6 +94,15 @@ public class CommitServiceTest implements CommitFixture, CommentFixture {
     }
 
     @Test
+    public void findNotifications_WithOtherUserCommitCommentedAndAssigned_ReturnsNotificationWithoutPrompt()
+            throws Exception {
+        dao.addComment(COMMIT_ID, createComment());
+        dao.addComment(COMMIT_ID, comment().user(COMMIT_USER).build());
+        dao.updateApproval(COMMIT_ID, Optional.of(new CommitApproval(APPROVE_USER, ClockService.now())));
+        findAndAssertNotifications(COMMENT_USER, false, APPROVE, APPROVE_USER);
+    }
+
+    @Test
     public void findNotifications_WithLowLimit_ConsidersMoreCommitsThanLimit() throws Exception {
         dao.addComment(COMMIT_ID, createComment());
         systemTimeRule.advanceBySeconds(1);
@@ -109,6 +113,23 @@ public class CommitServiceTest implements CommitFixture, CommentFixture {
         assertThat(commitNotifications.getTotalPrompts()).isEqualTo(2);
         assertThat(commitNotifications.getNotifications()).extracting(
                 notification -> notification.getCommit().getId().getHash()).containsExactly(OTHER_COMMIT_HASH);
+    }
+
+    @Test
+    public void assignCommit_CommitIsAssigned() throws Exception {
+        dao.addComment(COMMIT_ID, createComment());
+        service.assign(COMMIT_ID, APPROVE_USER);
+
+        assertThat(dao.findById(COMMIT_ID).get().getAssignee().get()).isEqualToComparingFieldByField(APPROVE_USER);
+    }
+
+    @Test
+    public void revertAssignment_CommitIsNotAssigned() throws Exception {
+        dao.addComment(COMMIT_ID, createComment());
+        service.assign(COMMIT_ID, APPROVE_USER);
+        service.revertAssignment(COMMIT_ID);
+
+        assertThat(dao.findById(COMMIT_ID).get().getAssignee()).isEmpty();
     }
 
     private Comment createComment() {
