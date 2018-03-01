@@ -158,4 +158,15 @@ public class CommitResource {
         User assignedTo = userService.findUserById(request.getUserId()).orElseThrow(NotFoundException::new);
         return new CommitAssignmentResponse(commitService.assign(commit.getId(), assignedTo).get());
     }
+
+    @POST
+    @Path("/revertAssignment")
+    @Timed
+    public void revertAssignmentOnCommit(AssignmentRequest request, @Auth UserWithPermissions user) {
+        Commit commit = commitPermissionGuard.guardAssignment(user, request.getCommitId());
+        if (!commitService.revertAssignment(commit.getId())) {
+            throw new NotFoundException();
+        }
+    }
+
 }
