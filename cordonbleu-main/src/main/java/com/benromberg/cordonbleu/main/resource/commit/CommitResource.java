@@ -4,6 +4,7 @@ import static java.util.stream.Collectors.toList;
 import com.benromberg.cordonbleu.data.model.CodeRepositoryMetadata;
 import com.benromberg.cordonbleu.data.model.Commit;
 import com.benromberg.cordonbleu.data.model.CommitFilePath;
+import com.benromberg.cordonbleu.data.model.User;
 import com.benromberg.cordonbleu.service.coderepository.CodeRepositoryService;
 import com.benromberg.cordonbleu.service.commit.CommitHighlightService;
 import com.benromberg.cordonbleu.service.commit.CommitService;
@@ -35,6 +36,7 @@ import org.slf4j.LoggerFactory;
 import com.benromberg.cordonbleu.main.permission.CommitPermissionGuard;
 import com.benromberg.cordonbleu.main.permission.UserWithPermissions;
 import com.benromberg.cordonbleu.main.resource.comment.CommentEnhancer;
+import com.benromberg.cordonbleu.service.user.UserService;
 import com.codahale.metrics.annotation.Timed;
 
 @Path("/commit")
@@ -45,17 +47,19 @@ public class CommitResource {
     private final CodeRepositoryService codeRepositoryService;
     private final RelevantDiffService relevantDiffService;
     private final CommitService commitService;
+    private final UserService userService;
     private final CommentEnhancer commentEnhancer;
     private final CommitHighlightService commitHighlightService;
     private final CommitPermissionGuard commitPermissionGuard;
 
     @Inject
     public CommitResource(CodeRepositoryService codeRepositoryService, RelevantDiffService relevantDiffService,
-            CommitService commitService, CommentEnhancer commentEnhancer,
+            CommitService commitService, UserService userService, CommentEnhancer commentEnhancer,
             CommitHighlightService commitHighlightService, CommitPermissionGuard commitPermissionGuard) {
         this.codeRepositoryService = codeRepositoryService;
         this.relevantDiffService = relevantDiffService;
         this.commitService = commitService;
+        this.userService = userService;
         this.commentEnhancer = commentEnhancer;
         this.commitHighlightService = commitHighlightService;
         this.commitPermissionGuard = commitPermissionGuard;
@@ -144,5 +148,14 @@ public class CommitResource {
     @Timed
     public CommitNotificationsResponse getNotifications(@Auth UserWithPermissions user, @QueryParam("limit") int limit) {
         return new CommitNotificationsResponse(commitService.findNotifications(user.getUser(), limit));
+    }
+
+    @POST
+    @Path("/assign")
+    @Timed
+    public CommitAssignmentResponse assignCommit(AssignmentRequest request, @Auth UserWithPermissions user) {
+        Commit commit = commitPermissionGuard.guardAssignment(user, request.getCommitId());
+        User assignedTo = userService.findUserById(request.getUserId()).orElseThrow(NotFoundException::new);
+        return new CommitAssignmentResponse(commitService.assign(commit.getId(), assignedTo).get());
     }
 }

@@ -26,11 +26,6 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import com.benromberg.cordonbleu.main.permission.TeamPermission;
-import com.benromberg.cordonbleu.main.resource.team.AddMemberRequest;
-import com.benromberg.cordonbleu.main.resource.team.CreateTeamRequest;
-import com.benromberg.cordonbleu.main.resource.team.RemoveMemberRequest;
-import com.benromberg.cordonbleu.main.resource.team.UpdateFlagForMemberRequest;
-import com.benromberg.cordonbleu.main.resource.team.UpdateTeamRequest;
 
 public class TeamResourceTest implements RepositoryFixture, UserFixture {
     private static final String NEW_TEAM_NAME = "new-team-name";
@@ -66,7 +61,7 @@ public class TeamResourceTest implements RepositoryFixture, UserFixture {
         assertThat(response.getStatus()).isEqualTo(Status.OK.getStatusCode());
         ReadActiveTeamResponse team = response.readEntity(ReadActiveTeamResponse.class);
         assertThat(team.getPermissions()).containsOnly(TeamPermission.VIEW, TeamPermission.APPROVE,
-                TeamPermission.COMMENT);
+                TeamPermission.COMMENT, TeamPermission.ASSIGN);
     }
 
     @Test
@@ -92,7 +87,7 @@ public class TeamResourceTest implements RepositoryFixture, UserFixture {
         assertThat(team.getId()).isEqualTo(TEAM_ID);
         assertThat(team.getName()).isEqualTo(TEAM_NAME);
         assertThat(team.getPermissions()).containsOnly(TeamPermission.VIEW, TeamPermission.COMMENT,
-                TeamPermission.APPROVE);
+                TeamPermission.APPROVE, TeamPermission.ASSIGN);
         assertThat(team.getFlags()).containsOnly(TeamFlag.PRIVATE);
     }
 

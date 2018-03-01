@@ -24,9 +24,6 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import com.benromberg.cordonbleu.main.permission.TeamPermission;
-import com.benromberg.cordonbleu.main.resource.user.LoginRequest;
-import com.benromberg.cordonbleu.main.resource.user.RegisterRequest;
-import com.benromberg.cordonbleu.main.resource.user.UserRequest;
 
 public class UserResourceTest implements UserFixture {
     private static final String USER_NAME = "userName";
@@ -67,7 +64,7 @@ public class UserResourceTest implements UserFixture {
         assertThat(userResponse.getTeams()).extracting(ReadUserTeamResponse::getId, ReadUserTeamResponse::getName,
                 ReadUserTeamResponse::getPermissions).containsExactly(
                 tuple(TEAM_ID, TEAM_NAME,
-                        new HashSet<>(asList(TeamPermission.COMMENT, TeamPermission.APPROVE, TeamPermission.VIEW))));
+                        new HashSet<>(asList(TeamPermission.COMMENT, TeamPermission.APPROVE, TeamPermission.VIEW, TeamPermission.ASSIGN))));
     }
 
     @Test
