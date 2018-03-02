@@ -377,10 +377,11 @@ public class CommitResourceTest implements CommitFixture {
         Response response = RULE.withAuthenticatedUser().post("/api/commit/assign",
                 new AssignmentRequest(COMMIT_HASH, TEAM_ID, CommentFixture.COMMENT_USER.getId()));
         assertThat(response.getStatus()).isEqualTo(Status.OK.getStatusCode());
-        CommitAssignmentResponse assignmentResponse = response
-                .readEntity(new GenericType<CommitAssignmentResponse>() {
+        ReadCommitAssignmentResponse assignmentResponse = response
+                .readEntity(new GenericType<ReadCommitAssignmentResponse>() {
                 });
-        assertThat(assignmentResponse.getAssignee()).isEqualToComparingFieldByField(CommentFixture.COMMENT_USER);
+
+        assertThat(assignmentResponse.getAssignee().getEmail()).isEqualTo(CommentFixture.COMMENT_USER_EMAIL);
     }
 
     @Test

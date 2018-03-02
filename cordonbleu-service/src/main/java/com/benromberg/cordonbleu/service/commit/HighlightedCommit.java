@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.benromberg.cordonbleu.data.model.User;
 import com.benromberg.cordonbleu.service.coderepository.CommitDetail;
 import com.benromberg.cordonbleu.service.coderepository.CommitFile;
 
@@ -71,6 +72,10 @@ public class HighlightedCommit {
 
     public Optional<CommitApproval> getApproval() {
         return commit.getApproval();
+    }
+
+    public Optional<User> getAssignee() {
+        return commit.getAssignee();
     }
 
     public List<HighlightedComment> getComments() {
