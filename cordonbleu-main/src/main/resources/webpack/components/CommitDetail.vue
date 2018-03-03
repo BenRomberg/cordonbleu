@@ -129,6 +129,8 @@ code {
           div
             <span class="primary-detail">{{{commit.author | toCommitAuthorWithAvatar}}}</span>
             <span class="fa fa-clock-o"></span> {{{commit.created | toTimeAgoSpan}}}
+          div(v-if="commit.assignment")
+            <span class="primary-detail">Assigned to {{{commit.assignment.assignee | toUserWithAvatar}}}</span>
         div#commit-details.panel-group.centering-root(@scroll="scrollCommitView()")
           div#commit-message.code.well {{{commit.messageAsHtml}}}
           div.panel.panel-default(v-for="(index, file) in commit.files")
