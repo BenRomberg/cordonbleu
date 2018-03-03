@@ -29,7 +29,7 @@ public class ReadCommitDetailResponse {
     private final Optional<ReadCommitApprovalResponse> approval;
 
     @JsonProperty
-    private final Optional<ReadCommitAssignmentResponse> assignee;
+    private final Optional<ReadCommitAssignmentResponse> assignment;
 
     @JsonProperty
     private final List<ReadCommitFileResponse> files;
@@ -38,14 +38,14 @@ public class ReadCommitDetailResponse {
     public ReadCommitDetailResponse(ReadCommitAuthorResponse author, String hash, LocalDateTime created,
             List<ReadCommitRepository> repositories, String messageAsHtml,
             Optional<ReadCommitApprovalResponse> approval,
-            Optional<ReadCommitAssignmentResponse> assignee, List<ReadCommitFileResponse> files) {
+            Optional<ReadCommitAssignmentResponse> assignment, List<ReadCommitFileResponse> files) {
         this.author = author;
         this.hash = hash;
         this.created = created;
         this.repositories = repositories;
         this.messageAsHtml = messageAsHtml;
         this.approval = approval;
-        this.assignee = assignee;
+        this.assignment = assignment;
         this.files = files;
     }
 
@@ -73,8 +73,8 @@ public class ReadCommitDetailResponse {
         return approval;
     }
 
-    public Optional<ReadCommitAssignmentResponse> getAssignee() {
-        return assignee;
+    public Optional<ReadCommitAssignmentResponse> getAssignment() {
+        return assignment;
     }
 
     public List<ReadCommitFileResponse> getFiles() {

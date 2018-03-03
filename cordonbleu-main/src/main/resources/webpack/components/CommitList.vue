@@ -80,20 +80,20 @@ th.icon {
     div#commit-list-container(@scroll="endlessScrolling.scroll()")
       table.table.table-striped.table-hover.table-condensed
         tr
-          th.author Author
           th.hash Commit
+          th.author Author
+          th.assignee Assignee
           th.created Time Ago
           th.repositories Repositories
-          th.assignee Assignee
           th.icon <span class="fa fa-comment"></span>
           th.icon <span class="fa fa-check-square"></span>
         tr(v-for="commit in commits" v-link="{ name: 'commitDetail', params: { commitHash: commit.hash, teamName: $route.params.teamName }}", :class="{ 'info': commit.hash === $route.params.commitHash, 'removed': commit.removed }")
-          td(:title="commit.author | toCommitAuthor") {{{commit.author | toCommitAuthorWithAvatar}}}
           td(:title="commit.hash") {{commit.hash.substring(0, 6)}}
-          td(:title="commit.created | toFullTime") {{commit.created | toTimeAgo true}}
-          td(:title="commit.repositories.join(', ')") {{commit.repositories}}
+          td(:title="commit.author | toCommitAuthor") {{{commit.author | toCommitAuthorWithAvatar}}}
           td(v-if="commit.assignment", :title="commit.assignment.assignee | toCommitAuthor" )  {{{commit.assignment.assignee | toCommitAuthorWithAvatar}}}
           td(v-else)
+          td(:title="commit.created | toFullTime") {{commit.created | toTimeAgo true}}
+          td(:title="commit.repositories.join(', ')") {{commit.repositories}}
           td.icon <span class="badge">{{commit.numComments | ifPositive}}</span>
           td.icon <span class="fa" :class="commit.approved ? 'fa-check' : ''"></span>
 </template>
