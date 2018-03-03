@@ -2,7 +2,7 @@
 @import "../variables";
 @import "../sharedWithEmail";
 
-$headerHeight: 87px;
+$headerHeight: 95px;
 
 #commit-details {
   top: $headerHeight;
@@ -63,6 +63,10 @@ $headerHeight: 87px;
     content: "\f063";
 }
 
+.panel-approval-block {
+    float: left;
+}
+
 .commit-file-before, .commit-file-before.panel-heading {
   background-color: #ffeaea;
 }
@@ -93,6 +97,9 @@ code {
   font-weight: 700;
   margin-right: 10px;
 }
+.secondary-detail {
+  margin-right: 10px;
+}
 .gap-detail {
   margin-right: 20px; 
 }
@@ -113,24 +120,29 @@ code {
       template(v-else)
         div#commit-header.alert.panel-heading-nowrap(:class="{ 'alert-default': !commit.approval, 'alert-success': commit.approval }")
           div.panel-heading-tail
-            template(v-if="commit.approval")
-              button.btn.btn-warning(@click="revertCommitApproval($event)") <span class="fa fa-undo"></span> Undo Approval
-            template(v-else)
-              button#approve-button.btn.btn-success(@click="approveCommit($event)") <span class="fa fa-thumbs-up"></span> Approve
+            button.btn.btn-info <span class="fa fa-arrow-right"></span><span class="fa fa-user"></span> Assign
           div
             <span class="fa fa-fw fa-code"></span> <span class="primary-detail">{{commit.hash}}</span>
             br
             template(v-for="repository in commit.repositories")
               <span class="fa fa-fw fa-database"></span> <span class="primary-detail">{{repository.name}}</span>
               <span class="fa fa-code-fork"></span> <span class="gap-detail">{{repository.branches.join(', ')}}</span>
-          div.panel-heading-tail(v-if="commit.approval")
-            <span class="fa fa-thumbs-up"></span> by <span class="primary-detail">{{{commit.approval.approver | toUserWithAvatar}}}</span>
-            <span class="fa fa-clock-o"></span> {{{commit.approval.time | toTimeAgoSpan}}}
+          div.panel-heading-tail
+            template(v-if="commit.approval")
+              div.panel-approval-block
+                div
+                  <span class="fa fa-thumbs-up"></span> by <span class="primary-detail">{{{commit.approval.approver | toUserWithAvatar}}}</span>
+                div
+                  <span class="fa fa-clock-o"></span> <span class="secondary-detail">{{{commit.approval.time | toTimeAgoSpan}}}</span>
+              div.panel-approval-block
+                button.btn.btn-warning(@click="revertCommitApproval($event)") <span class="fa fa-undo"></span> Undo
+            template(v-else)
+              button#approve-button.btn.btn-success(@click="approveCommit($event)") <span class="fa fa-thumbs-up"></span> Approve
           div
             <span class="primary-detail">{{{commit.author | toCommitAuthorWithAvatar}}}</span>
             <span class="fa fa-clock-o"></span> {{{commit.created | toTimeAgoSpan}}}
-          div(v-if="commit.assignment")
-            <span class="primary-detail">Assigned to {{{commit.assignment.assignee | toUserWithAvatar}}}</span>
+          div
+            <span />
         div#commit-details.panel-group.centering-root(@scroll="scrollCommitView()")
           div#commit-message.code.well {{{commit.messageAsHtml}}}
           div.panel.panel-default(v-for="(index, file) in commit.files")
