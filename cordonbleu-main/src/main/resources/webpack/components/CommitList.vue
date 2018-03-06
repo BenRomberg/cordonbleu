@@ -58,9 +58,6 @@ th.created {
 th.repositories {
   width: $repositoriesWidth;
 }
-th.assignee {
-  width: $assigneeWidth;
-}
 th.icon {
   width: $iconWidth;
   text-align: center;
@@ -82,19 +79,19 @@ th.icon {
         tr
           th.hash Commit
           th.author Author
-          th.assignee Assignee
           th.created Time Ago
           th.repositories Repositories
           th.icon <span class="fa fa-comment"></span>
+          th.icon <span class="fa fa-hand-o-right"></span>
           th.icon <span class="fa fa-check-square"></span>
         tr(v-for="commit in commits" v-link="{ name: 'commitDetail', params: { commitHash: commit.hash, teamName: $route.params.teamName }}", :class="{ 'info': commit.hash === $route.params.commitHash, 'removed': commit.removed }")
           td(:title="commit.hash") {{commit.hash.substring(0, 6)}}
           td(:title="commit.author | toCommitAuthor") {{{commit.author | toCommitAuthorWithAvatar}}}
-          td(v-if="commit.assignment", :title="commit.assignment.assignee | toCommitAuthor" )  {{{commit.assignment.assignee | toCommitAuthorWithAvatar}}}
-          td(v-else)
           td(:title="commit.created | toFullTime") {{commit.created | toTimeAgo true}}
           td(:title="commit.repositories.join(', ')") {{commit.repositories}}
           td.icon <span class="badge">{{commit.numComments | ifPositive}}</span>
+          td(v-if="commit.assignment", :title="commit.assignment.assignee | toCommitAuthor" )  {{{commit.assignment.assignee | toAvatar 18}}}
+          td(v-else)
           td.icon <span class="fa" :class="commit.approved ? 'fa-check' : ''"></span>
 </template>
 
