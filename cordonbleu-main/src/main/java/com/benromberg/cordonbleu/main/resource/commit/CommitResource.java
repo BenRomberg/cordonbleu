@@ -5,6 +5,7 @@ import com.benromberg.cordonbleu.data.model.CodeRepositoryMetadata;
 import com.benromberg.cordonbleu.data.model.Commit;
 import com.benromberg.cordonbleu.data.model.CommitFilePath;
 import com.benromberg.cordonbleu.data.model.User;
+import com.benromberg.cordonbleu.main.resource.RevertAssignmentRequest;
 import com.benromberg.cordonbleu.service.coderepository.CodeRepositoryService;
 import com.benromberg.cordonbleu.service.commit.CommitHighlightService;
 import com.benromberg.cordonbleu.service.commit.CommitService;
@@ -162,7 +163,7 @@ public class CommitResource {
     @POST
     @Path("/revertAssignment")
     @Timed
-    public void revertAssignmentOnCommit(AssignmentRequest request, @Auth UserWithPermissions user) {
+    public void revertAssignmentOnCommit(RevertAssignmentRequest request, @Auth UserWithPermissions user) {
         Commit commit = commitPermissionGuard.guardAssignment(user, request.getCommitId());
         if (!commitService.revertAssignment(commit.getId())) {
             throw new NotFoundException();

@@ -15,6 +15,7 @@ import com.benromberg.cordonbleu.data.model.CommitLineNumber;
 import com.benromberg.cordonbleu.data.model.TeamFlag;
 import com.benromberg.cordonbleu.main.CordonBleuTestRule;
 import com.benromberg.cordonbleu.main.RequestBuilder;
+import com.benromberg.cordonbleu.main.resource.RevertAssignmentRequest;
 import com.benromberg.cordonbleu.service.coderepository.CodeRepositoryMock;
 import com.benromberg.cordonbleu.service.commit.CommitNotificationActionType;
 import com.benromberg.cordonbleu.util.ClockService;
@@ -389,7 +390,7 @@ public class CommitResourceTest implements CommitFixture {
         teamDao.updateFlag(TEAM_ID, TeamFlag.PRIVATE, true);
         commitDao.insert(COMMIT);
         Response response = RULE.withAuthenticatedUser().post("/api/commit/revertAssignment",
-                new AssignmentRequest(COMMIT_HASH, TEAM_ID, CommentFixture.COMMENT_USER.getId()));
+                new RevertAssignmentRequest(COMMIT_HASH, TEAM_ID));
         assertThat(response.getStatus()).isEqualTo(Status.NOT_FOUND.getStatusCode());
     }
 
@@ -398,7 +399,7 @@ public class CommitResourceTest implements CommitFixture {
         teamDao.updateFlag(TEAM_ID, TeamFlag.PRIVATE, true);
         commitDao.insert(COMMIT);
         Response response = RULE.withTeamUser().post("/api/commit/revertAssignment",
-                new AssignmentRequest(COMMIT_HASH, TEAM_ID, CommentFixture.COMMENT_USER.getId()));
+                new RevertAssignmentRequest(COMMIT_HASH, TEAM_ID));
         assertThat(response.getStatus()).isEqualTo(Status.NO_CONTENT.getStatusCode());
     }
 
@@ -407,7 +408,7 @@ public class CommitResourceTest implements CommitFixture {
         teamDao.updateFlag(TEAM_ID, TeamFlag.APPROVE_MEMBER_ONLY, true);
         commitDao.insert(COMMIT);
         Response response = RULE.withAuthenticatedUser().post("/api/commit/revertAssignment",
-                new AssignmentRequest(COMMIT_HASH, TEAM_ID, CommentFixture.COMMENT_USER.getId()));
+                new RevertAssignmentRequest(COMMIT_HASH, TEAM_ID));
         assertThat(response.getStatus()).isEqualTo(Status.FORBIDDEN.getStatusCode());
     }
 
@@ -416,21 +417,21 @@ public class CommitResourceTest implements CommitFixture {
         teamDao.updateFlag(TEAM_ID, TeamFlag.APPROVE_MEMBER_ONLY, true);
         commitDao.insert(COMMIT);
         Response response = RULE.withTeamUser().post("/api/commit/revertAssignment",
-                new AssignmentRequest(COMMIT_HASH, TEAM_ID, CommentFixture.COMMENT_USER.getId()));
+                new RevertAssignmentRequest(COMMIT_HASH, TEAM_ID));
         assertThat(response.getStatus()).isEqualTo(Status.NO_CONTENT.getStatusCode());
     }
 
     @Test
     public void revertAssignment_WithoutAuthenticatedUser_YieldsUnauthorized() throws Exception {
         Response response = RULE.post("/api/commit/revertAssignment",
-                new AssignmentRequest(COMMIT_HASH, TEAM_ID, CommentFixture.COMMENT_USER.getId()));
+                new RevertAssignmentRequest(COMMIT_HASH, TEAM_ID));
         assertThat(response.getStatus()).isEqualTo(Status.UNAUTHORIZED.getStatusCode());
     }
 
     @Test
     public void revertAssignment_WithoutCommit_YieldsNotFound() throws Exception {
         Response response = RULE.withAuthenticatedUser().post("/api/commit/revertAssignment",
-                new AssignmentRequest(COMMIT_HASH, TEAM_ID, CommentFixture.COMMENT_USER.getId()));
+                new RevertAssignmentRequest(COMMIT_HASH, TEAM_ID));
         assertThat(response.getStatus()).isEqualTo(Status.NOT_FOUND.getStatusCode());
     }
 
@@ -440,7 +441,7 @@ public class CommitResourceTest implements CommitFixture {
         commitDao.updateApproval(COMMIT_ID,
                 Optional.of(new CommitApproval(RULE.getAuthenticatedUser(), ClockService.now())));
         Response response = RULE.withAuthenticatedUser().post("/api/commit/revertAssignment",
-                new AssignmentRequest(COMMIT_HASH, TEAM_ID, CommentFixture.COMMENT_USER.getId()));
+                new RevertAssignmentRequest(COMMIT_HASH, TEAM_ID));
         assertThat(response.getStatus()).isEqualTo(Status.NO_CONTENT.getStatusCode());
     }
 
