@@ -30,7 +30,6 @@ $headerHeight: 95px;
 }
 .panel-heading-nowrap > div {
   white-space: nowrap;
-  overflow: hidden;
   text-overflow: ellipsis;
 }
 .panel-heading-tail {
@@ -38,8 +37,14 @@ $headerHeight: 95px;
   text-align: right;
   float: right;
 }
-.panel-heading-tail > button {
-  margin-bottom: 6px;
+.panel-heading-tail > .btn-group {
+  margin-right: 8px;
+}
+.panel-heading-approval {
+  margin-top: 3px;
+}
+#approve-button {
+  margin: 2px;
 }
 .popover {
   color: #000;
@@ -62,11 +67,6 @@ $headerHeight: 95px;
 .panel-heading a.collapsed:after {
     content: "\f063";
 }
-
-.panel-approval-block {
-    float: left;
-}
-
 .commit-file-before, .commit-file-before.panel-heading {
   background-color: #ffeaea;
 }
@@ -76,7 +76,6 @@ $headerHeight: 95px;
 .file-content {
   overflow-x: auto;
 }
-
 #commit-message, code {
   overflow: auto;
   display: inline-block;
@@ -97,11 +96,8 @@ code {
   font-weight: 700;
   margin-right: 10px;
 }
-.secondary-detail {
-  margin-right: 10px;
-}
 .gap-detail {
-  margin-right: 20px; 
+  margin-right: 20px;
 }
 </style>
 
@@ -120,29 +116,23 @@ code {
       template(v-else)
         div#commit-header.alert.panel-heading-nowrap(:class="{ 'alert-default': !commit.approval, 'alert-success': commit.approval }")
           div.panel-heading-tail
-            button.btn.btn-info <span class="fa fa-arrow-right"></span><span class="fa fa-user"></span> Assign
+            select#assignee-select
+            template(v-if="commit.approval")
+              button#approve-button.btn.btn-warning(@click="revertCommitApproval($event)") <span class="fa fa-undo"></span> Undo Approval
+            template(v-else)
+              button#approve-button.btn.btn-success(@click="approveCommit($event)") <span class="fa fa-thumbs-up"></span> Approve
           div
             <span class="fa fa-fw fa-code"></span> <span class="primary-detail">{{commit.hash}}</span>
             br
             template(v-for="repository in commit.repositories")
               <span class="fa fa-fw fa-database"></span> <span class="primary-detail">{{repository.name}}</span>
               <span class="fa fa-code-fork"></span> <span class="gap-detail">{{repository.branches.join(', ')}}</span>
-          div.panel-heading-tail
-            template(v-if="commit.approval")
-              div.panel-approval-block
-                div
-                  <span class="fa fa-thumbs-up"></span> by <span class="primary-detail">{{{commit.approval.approver | toUserWithAvatar}}}</span>
-                div
-                  <span class="fa fa-clock-o"></span> <span class="secondary-detail">{{{commit.approval.time | toTimeAgoSpan}}}</span>
-              div.panel-approval-block
-                button.btn.btn-warning(@click="revertCommitApproval($event)") <span class="fa fa-undo"></span> Undo
-            template(v-else)
-              button#approve-button.btn.btn-success(@click="approveCommit($event)") <span class="fa fa-thumbs-up"></span> Approve
+          div.panel-heading-tail.panel-heading-approval(v-if="commit.approval")
+            <span class="fa fa-thumbs-up"></span> by <span class="primary-detail">{{{commit.approval.approver | toUserWithAvatar}}}</span>
+            <span class="fa fa-clock-o"></span> {{{commit.approval.time | toTimeAgoSpan}}}
           div
             <span class="primary-detail">{{{commit.author | toCommitAuthorWithAvatar}}}</span>
             <span class="fa fa-clock-o"></span> {{{commit.created | toTimeAgoSpan}}}
-          div
-            <span />
         div#commit-details.panel-group.centering-root(@scroll="scrollCommitView()")
           div#commit-message.code.well {{{commit.messageAsHtml}}}
           div.panel.panel-default(v-for="(index, file) in commit.files")
@@ -174,6 +164,7 @@ module.exports = {
   },
   vuex: {
     getters: {
+      loggedInUser: Store.loggedInUser,
       activeTeam: Store.activeTeam,
       hasTeamPermissionApprove: Store.hasTeamPermissionApprove
     },
@@ -239,6 +230,7 @@ module.exports = {
           if (window.location.hash) {
             window.location.href = window.location.hash
           }
+          this.setupAssignmentMultiselect(data)
         })
       })
     },
@@ -278,6 +270,21 @@ module.exports = {
       }, data => this.commit.approval = data)
       this.updateNotifications()
     },
+    assignCommit: function(assignedUserId) {
+      if (assignedUserId.length === 0) {
+        this.ajaxPost('/commit/revertAssignment', {
+          hash: this.$route.params.commitHash,
+          teamId: this.activeTeam.id
+        }, data => this.commit.assignment = data)
+      }
+      else {
+        this.ajaxPost('/commit/assign', {
+          hash: this.$route.params.commitHash,
+          teamId: this.activeTeam.id,
+          userId: assignedUserId
+        }, data => this.commit.assignment = data)
+      }
+    },
     revertCommitApproval: function(event) {
       if (this.requireLogin(event, 'revert the approval')) {
         ga('send', 'event', 'commit', 'revertApproval', 'requireLogin')
@@ -303,6 +310,33 @@ module.exports = {
         content: 'Only team-members may approve commits or reject approvals within this team.',
       })
       return true
+    },
+    setupAssignmentMultiselect: function(commit) {
+      $('#assignee-select').multiselect({
+        maxHeight : 400,
+        buttonWidth : 200,
+        inheritClass : true,
+        enableHTML: true,
+        enableFiltering : true,
+        enableCaseInsensitiveFiltering : true,
+        buttonText: function(options, select) {
+          if (options.length === 1) {
+            return options[0].attributes.title.value;
+          }
+        },
+        onChange: (option, checked, select) => {
+          this.assignCommit($(option).val())
+        }
+      })
+
+      var filterToOption = (filter, valueFunc, labelFunc, titleFunc, enabled) => {
+        return [{ value: '', title: 'Not assigned', label: '<b>Not assigned</b>', selected: 'selected', disabled: !enabled }].concat(filter.map(value => {
+          var isSelected = commit.assignment ? (value.id === commit.assignment.assignee.id) : false
+          return { value: valueFunc(value), title: "Assigned to ".concat(titleFunc(value)), label: labelFunc(value), selected: isSelected, disabled: !enabled }
+        }))
+      }
+      var userOptions = filterToOption(this.activeTeam.filters.users, user => user.id, this.$options.filters.toUserWithAvatar, this.$options.filters.toCommitAuthorWithAvatar, this.loggedInUser)
+      $('#assignee-select').multiselect('dataprovider', userOptions)
     }
   },
   route: {

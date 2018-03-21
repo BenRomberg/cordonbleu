@@ -81,17 +81,17 @@ th.icon {
           th.author Author
           th.created Time Ago
           th.repositories Repositories
-          th.icon <span class="fa fa-comment"></span>
           th.icon <span class="fa fa-hand-o-right"></span>
+          th.icon <span class="fa fa-comment"></span>
           th.icon <span class="fa fa-check-square"></span>
         tr(v-for="commit in commits" v-link="{ name: 'commitDetail', params: { commitHash: commit.hash, teamName: $route.params.teamName }}", :class="{ 'info': commit.hash === $route.params.commitHash, 'removed': commit.removed }")
           td(:title="commit.hash") {{commit.hash.substring(0, 6)}}
           td(:title="commit.author | toCommitAuthor") {{{commit.author | toCommitAuthorWithAvatar}}}
           td(:title="commit.created | toFullTime") {{commit.created | toTimeAgo true}}
           td(:title="commit.repositories.join(', ')") {{commit.repositories}}
-          td.icon <span class="badge">{{commit.numComments | ifPositive}}</span>
           td(v-if="commit.assignment", :title="commit.assignment.assignee | toCommitAuthor" )  {{{commit.assignment.assignee | toAvatar 18}}}
           td(v-else)
+          td.icon <span class="badge">{{commit.numComments | ifPositive}}</span>
           td.icon <span class="fa" :class="commit.approved ? 'fa-check' : ''"></span>
 </template>
 
@@ -259,6 +259,7 @@ module.exports = {
     'update-commit-broadcast': function(commit) {
       this.commits.filter(item => item.hash === commit.hash).forEach(item => {
         item.approved = commit.approval !== null
+        item.assignment = commit.assignment
         item.numComments = this.calcNumComments(commit)
       })
     }

@@ -1,11 +1,12 @@
 <style lang="sass">
+@import "../variables";
 #commit-list {
   float: left;
-  margin-right: 4px;
+  width: $tableWidth;
 }
 
 #commit-detail {
-  overflow: auto;
+  margin-left: $tableWidth + 4px;
 }
 </style>
 
