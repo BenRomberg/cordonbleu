@@ -159,6 +159,27 @@ public class CommitDaoTest implements CommitFixture, CommentFixture {
     }
 
     @Test
+    public void findByFilter_ReturnsCommitsAssignedToAssignee() throws Exception {
+        Commit dummyElement = new CommitBuilder().assignee(COMMIT_ASSIGNEE).build();
+        dao.insert(dummyElement);
+        List<Commit> foundCommits = dao.findByFilter(createFilter(REPOSITORY, dummyElement.getAssignee()));
+        assertThat(foundCommits).extracting(Commit::getId).containsExactly(COMMIT_ID);
+    }
+
+    @Test
+    public void findByFilter_WithAssigneeSet_DoesNotReturnCommitsWithNoAssignee() throws Exception {
+        dao.insert(COMMIT);
+        assertThat(dao.findByFilter(createFilter(REPOSITORY, Optional.of(COMMIT_ASSIGNEE)))).isEmpty();
+    }
+
+    @Test
+    public void findByFilter_WithAssigneeSet_DoesNotReturnCommitsAssignedToOthers() throws Exception {
+        Commit commitAssignedToAnother = new CommitBuilder().assignee(COMMIT_USER).build();
+        dao.insert(commitAssignedToAnother);
+        assertThat(dao.findByFilter(createFilter(REPOSITORY, Optional.of(COMMIT_ASSIGNEE)))).isEmpty();
+    }
+
+    @Test
     public void findByFilter_CanBeFoundByRepositoryAndAuthorEmail_CaseInsensitive() throws Exception {
         Commit dummyElement = COMMIT;
         dao.insert(dummyElement);
@@ -542,15 +563,19 @@ public class CommitDaoTest implements CommitFixture, CommentFixture {
     }
 
     private CommitFilter createFilter(CodeRepositoryMetadata repository, CommitAuthor author, boolean approved) {
-        return new CommitFilter(TEAM, asList(repository), asList(author), asList(), approved, Optional.empty(), 100);
+        return new CommitFilter(TEAM, asList(repository), asList(author), asList(), approved, Optional.empty(), 100, Optional.empty());
+    }
+
+    private CommitFilter createFilter(CodeRepositoryMetadata repository, Optional<User> assignee) {
+        return new CommitFilter(TEAM, asList(repository), asList(COMMIT_AUTHOR), asList(), true, Optional.empty(), 100, assignee);
     }
 
     private CommitFilter createFilter(CodeRepositoryMetadata repository, User user, boolean approved) {
-        return new CommitFilter(TEAM, asList(repository), asList(), asList(user), approved, Optional.empty(), 100);
+        return new CommitFilter(TEAM, asList(repository), asList(), asList(user), approved, Optional.empty(), 100, Optional.empty());
     }
 
     private CommitFilter createFilter(Optional<String> lastCommitId, int limit) {
-        return new CommitFilter(TEAM, asList(REPOSITORY), asList(COMMIT_AUTHOR), asList(), true, lastCommitId, limit);
+        return new CommitFilter(TEAM, asList(REPOSITORY), asList(COMMIT_AUTHOR), asList(), true, lastCommitId, limit, Optional.empty());
     }
 
     private Commit insertWithComment(Commit dummyElement) {

@@ -16,9 +16,10 @@ public class CommitFilter {
     private final boolean approved;
     private final Optional<String> lastCommitHash;
     private final int limit;
+    private final Optional<User> assignedTo;
 
     public CommitFilter(Team team, List<CodeRepositoryMetadata> repositories, List<CommitAuthor> authors,
-            List<User> users, boolean approved, Optional<String> lastCommitHash, int limit) {
+            List<User> users, boolean approved, Optional<String> lastCommitHash, int limit, Optional<User> assignedTo) {
         this.team = team;
         this.repositories = repositories;
         this.authors = authors;
@@ -26,6 +27,7 @@ public class CommitFilter {
         this.approved = approved;
         this.lastCommitHash = lastCommitHash;
         this.limit = limit;
+        this.assignedTo = assignedTo;
     }
 
     public Team getTeam() {
@@ -54,5 +56,9 @@ public class CommitFilter {
 
     public int getLimit() {
         return limit;
+    }
+
+    public Optional<User> getAssignedTo() {
+        return assignedTo;
     }
 }

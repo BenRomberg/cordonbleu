@@ -147,6 +147,10 @@ public class CommitDao extends MongoDao<CommitId, Commit> {
         if (!commitFilter.isApproved()) {
             query = query.and(DBQuery.is(Commit.APPROVAL_PROPERTY, convertToDbObject(Optional.empty())));
         }
+        if (commitFilter.getAssignedTo().isPresent()) {
+            query = query.and(DBQuery.is(Commit.ASSIGNEE, commitFilter.getAssignedTo()));
+        }
+
         return findAndSort(query).limit(commitFilter.getLimit()).toArray();
     }
 

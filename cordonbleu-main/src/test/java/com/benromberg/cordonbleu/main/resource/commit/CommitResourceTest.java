@@ -8,9 +8,11 @@ import com.benromberg.cordonbleu.data.dao.CommitDao;
 import com.benromberg.cordonbleu.data.dao.TeamDao;
 import com.benromberg.cordonbleu.data.model.Comment;
 import com.benromberg.cordonbleu.data.model.CommentFixture;
+import com.benromberg.cordonbleu.data.model.Commit;
 import com.benromberg.cordonbleu.data.model.CommitApproval;
 import com.benromberg.cordonbleu.data.model.CommitFilePath;
 import com.benromberg.cordonbleu.data.model.CommitFixture;
+import com.benromberg.cordonbleu.data.model.CommitId;
 import com.benromberg.cordonbleu.data.model.CommitLineNumber;
 import com.benromberg.cordonbleu.data.model.TeamFlag;
 import com.benromberg.cordonbleu.main.CordonBleuTestRule;
@@ -86,6 +88,19 @@ public class CommitResourceTest implements CommitFixture {
         Response response = RULE.post("/api/commit/list", createListRequest("non-existing-repo-id"));
         List<ReadCommitListItemResponse> commits = getCommitsFromResponse(response);
         assertThat(commits).isEmpty();
+    }
+
+    @Test
+    public void listCommits_AssignedToMe_ReturnsOnlyAssignedToMe() throws Exception {
+        commitDao.insert(COMMIT);
+
+        CommitId assignedToMeId = new CommitId("someRandomHash", TEAM);
+        Commit commitAssignedToMe = new CommitBuilder().assignee(RULE.getAuthenticatedUser()).id(assignedToMeId).build();
+        commitDao.insert(commitAssignedToMe);
+
+        Response response = RULE.withAuthenticatedUser().post("/api/commit/list", createListRequest(REPOSITORY_ID, true));
+        List<ReadCommitListItemResponse> commits = getCommitsFromResponse(response);
+        assertThat(commits).extracting(ReadCommitListItemResponse::getHash).containsExactly(assignedToMeId.getHash());
     }
 
     @Test
@@ -454,8 +469,12 @@ public class CommitResourceTest implements CommitFixture {
     }
 
     private CommitListRequest createListRequest(String repositoryId) {
+        return createListRequest(repositoryId, false);
+    }
+
+    private CommitListRequest createListRequest(String repositoryId, boolean onlyAssignedToMe) {
         return new CommitListRequest(asList(repositoryId), asList(new CommitAuthorRequest(COMMIT_AUTHOR_NAME,
-                COMMIT_AUTHOR_EMAIL)), asList(), true, Optional.empty(), LIMIT);
+                COMMIT_AUTHOR_EMAIL)), asList(), true, onlyAssignedToMe, Optional.empty(), LIMIT);
     }
 
     private List<ReadCommitListItemResponse> getCommitsFromResponse(Response response) {

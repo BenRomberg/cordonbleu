@@ -73,7 +73,7 @@ public class CommitResource {
             CommitListRequest request) {
         List<CodeRepositoryMetadata> repositories = commitPermissionGuard.guardListCommits(user,
                 request.getRepositories());
-        List<Commit> commits = codeRepositoryService.getCommitsForFilter(request.toFilter(), repositories);
+        List<Commit> commits = codeRepositoryService.getCommitsForFilter(request.toFilterFor(user), repositories);
         return commits.stream().map(commit -> new CommitListItemResponse(commit)).collect(toList());
     }
 

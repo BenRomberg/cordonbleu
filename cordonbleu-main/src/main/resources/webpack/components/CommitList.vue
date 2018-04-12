@@ -4,6 +4,13 @@
 #show-approved-checkbox {
   margin-top: 4px;
   margin-bottom: 0;
+  float: left;
+}
+#assigned-to-me-checkbox {
+  margin-left: 20px;
+  margin-top: 4px;
+  margin-bottom: 0;
+  float: left;
 }
 .multiselect {
   margin: 2px;
@@ -71,6 +78,8 @@ th.icon {
       select#author-dropdown.btn-primary(multiple="multiple")
       div#show-approved-checkbox.checkbox
         label <input type="checkbox" v-model="showApproved" @change="updateApproved()"> Show Approved
+      div#assigned-to-me-checkbox.checkbox
+        label <input type="checkbox" v-model="onlyAssignedToMe" @change="updateList()"> Only assigned to me
       div#refresh-commit-list(v-if="refreshCount > 0")
         button.btn.btn-info.btn-xs(@click="updateList()")
           <span class="badge">{{refreshCount}}</span> new commit{{refreshCount | toPluralS}} available
@@ -106,6 +115,7 @@ module.exports = {
     return {
       commits: [],
       showApproved: true,
+      onlyAssignedToMe: false,
       initialized: false,
       shiftKeyPressed: false,
       refreshCount: 0,
@@ -217,6 +227,7 @@ module.exports = {
       Lockr.set('#repository-dropdown', selectAllIsEmpty('#repository-dropdown'))
       Lockr.set('#author-dropdown', selectAllIsEmpty('#author-dropdown'))
       Lockr.set('showApproved', this.showApproved)
+      Lockr.set('onlyAssignedToMe', this.onlyAssignedToMe)
     },
     restoreFilters: function(data) {
       var filterToOption = (filter, labelFunc, valueFunc, selected) => {
@@ -234,6 +245,7 @@ module.exports = {
       ]
       $('#author-dropdown').multiselect('dataprovider', authorGroups)
       this.showApproved = Lockr.get('showApproved', true)
+      this.onlyAssignedToMe = Lockr.get('onlyAssignedToMe', true)
     },
     appendList: function() {
       this.fetchList(data => this.commits.push.apply(this.commits, data))
@@ -246,6 +258,7 @@ module.exports = {
         author: authorAllOptions.filter(author => typeof author === 'object'),
         user: authorAllOptions.filter(author => typeof author === 'string'),
         approved: this.showApproved,
+        onlyAssignedToMe: this.onlyAssignedToMe,
         lastCommitHash: this.commits.length == 0 || fetchUpdates ? null : this.commits[this.commits.length - 1].hash,
         limit: limit || LIMIT
       }

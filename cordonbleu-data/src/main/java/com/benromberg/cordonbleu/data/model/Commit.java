@@ -61,8 +61,9 @@ public class Commit extends Entity<CommitId> {
         this.removed = removed;
     }
 
-    public Commit(CommitId id, List<CommitRepository> repositories, CommitAuthor author, LocalDateTime created, String message) {
-        this(id, repositories, author, empty(), created, message, empty(), emptyList(), false);
+    public Commit(CommitId id, List<CommitRepository> repositories, CommitAuthor author, Optional<User> assignee, LocalDateTime created,
+            String message) {
+        this(id, repositories, author, assignee, created, message, empty(), emptyList(), false);
     }
 
     public CommitAuthor getAuthor() {
