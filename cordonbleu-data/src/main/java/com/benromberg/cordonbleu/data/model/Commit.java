@@ -15,7 +15,7 @@ public class Commit extends Entity<CommitId> {
     public static final String REMOVED_PROPERTY = "removed";
     public static final String APPROVAL_PROPERTY = "approval";
     public static final String AUTHOR_PROPERTY = "author";
-    public static final String ASSIGNEE = "assignee";
+    public static final String ASSIGNEE_PROPERTY = "assignee";
     public static final String COMMENTS_PROPERTY = "comments";
     public static final String REPOSITORIES_PROPERTY = "repositories";
     public static final String CREATED_PROPERTY = "created";
@@ -26,7 +26,7 @@ public class Commit extends Entity<CommitId> {
     @JsonProperty(AUTHOR_PROPERTY)
     private final CommitAuthor author;
 
-    @JsonProperty(ASSIGNEE)
+    @JsonProperty(ASSIGNEE_PROPERTY)
     private final Optional<User> assignee;
 
     @JsonProperty(CREATED_PROPERTY)
@@ -46,7 +46,7 @@ public class Commit extends Entity<CommitId> {
 
     @JsonCreator
     private Commit(CommitId id, @JsonProperty(REPOSITORIES_PROPERTY) List<CommitRepository> repositories,
-            @JsonProperty(AUTHOR_PROPERTY) CommitAuthor author, @JsonProperty(ASSIGNEE) Optional<User> assignee,
+            @JsonProperty(AUTHOR_PROPERTY) CommitAuthor author, @JsonProperty(ASSIGNEE_PROPERTY) Optional<User> assignee,
             @JsonProperty(CREATED_PROPERTY) LocalDateTime created, String message,
             @JsonProperty(APPROVAL_PROPERTY) Optional<CommitApproval> approval, @JsonProperty(COMMENTS_PROPERTY) List<Comment> comments,
             @JsonProperty(REMOVED_PROPERTY) boolean removed) {
