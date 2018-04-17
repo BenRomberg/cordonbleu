@@ -41,6 +41,7 @@ public class CommitDaoTest implements CommitFixture, CommentFixture {
     private static final String UPPERCASE_AUTHOR = "Uppercase Author";
     private static final String OTHER_TEXT = "other text";
     private static final LocalDateTime COMMIT_APPROVAL_TIME = LocalDateTime.now();
+    private static final LocalDateTime COMMIT_CREATION_TIME = LocalDateTime.now();
     private static final String OTHER_COMMIT_HASH = "other commit hash";
     private static final List<String> OTHER_COMMIT_BRANCHES = asList("other commit branch");
     private static final CodeRepositoryMetadata OTHER_REPOSITORY = new RepositoryBuilder().name(OTHER_REPOSITORY_NAME)
@@ -544,6 +545,55 @@ public class CommitDaoTest implements CommitFixture, CommentFixture {
         Commit otherCommit = insertWithComment(commit().id(OTHER_COMMIT_HASH).build());
         List<Commit> notifications = insertUserWithTeamAndFindNotifications(COMMENT_USER, 1);
         assertThat(notifications).extracting(Commit::getId).containsExactly(otherCommit.getId());
+    }
+
+    @Test
+    public void findNonAssignedNonApproved_CommitFromAnotherTeamIsNotReturned() throws Exception {
+        dao.insert(new CommitBuilder().created(COMMIT_CREATION_TIME).build());
+        assertThat(dao.findNonAssignedNonApproved(OTHER_TEAM, COMMIT_CREATION_TIME.minusSeconds(10), 10)).isEmpty();
+    }
+
+    @Test
+    public void findNonAssignedNonApproved_CommitWithAssigneeIsNotReturned() throws Exception {
+        dao.insert(new CommitBuilder().created(COMMIT_CREATION_TIME).assignee(COMMIT_ASSIGNEE).build());
+        assertThat(dao.findNonAssignedNonApproved(TEAM, COMMIT_CREATION_TIME.minusSeconds(10), 10)).isEmpty();
+    }
+
+    @Test
+    public void findNonAssignedNonApproved_CommitWithApprovalIsNotReturned() throws Exception {
+        Commit dummyElement = new CommitBuilder().created(COMMIT_CREATION_TIME).build();
+        dao.insert(dummyElement);
+        dao.updateApproval(dummyElement.getId(), Optional.of(new CommitApproval(COMMIT_APPROVER, COMMIT_APPROVAL_TIME)));
+        assertThat(dao.findNonAssignedNonApproved(TEAM, COMMIT_CREATION_TIME.minusSeconds(10), 10)).isEmpty();
+    }
+
+    @Test
+    public void findNonAssignedNonApproved_CommitEarlierThanSpecifiedDateIsNotReturned() throws Exception {
+        Commit dummyElement = new CommitBuilder().created(COMMIT_CREATION_TIME).build();
+        dao.insert(dummyElement);
+        assertThat(dao.findNonAssignedNonApproved(TEAM, dummyElement.getCreated(), 10)).isEmpty();
+        assertThat(dao.findNonAssignedNonApproved(TEAM, dummyElement.getCreated().plusSeconds(10), 10)).isEmpty();
+    }
+
+    @Test
+    public void findNonAssignedNonApproved_CommitNonAssignedNonApprovedIsReturned() throws Exception {
+        Commit dummyElement = new CommitBuilder().created(COMMIT_CREATION_TIME).build();
+        dao.insert(dummyElement);
+        List<Commit> findResult = dao.findNonAssignedNonApproved(TEAM, COMMIT_CREATION_TIME.minusSeconds(10), 10);
+        assertThat(findResult).extracting(Commit::getId).containsExactly(dummyElement.getId());
+    }
+
+    @Test
+    public void findNonAssignedNonApproved_ReturnsUpToLimitAmount() throws Exception {
+        LocalDateTime creationDate = LocalDateTime.now();
+        dao.insert(new CommitBuilder().id("First").created(creationDate).build());
+        dao.insert(new CommitBuilder().id("Second").created(creationDate).build());
+        dao.insert(new CommitBuilder().id("Third").created(creationDate).build());
+
+        assertThat(dao.findNonAssignedNonApproved(TEAM, creationDate.minusSeconds(10), 10)).hasSize(3);
+        assertThat(dao.findNonAssignedNonApproved(TEAM, creationDate.minusSeconds(10), 2)).hasSize(2);
+        assertThat(dao.findNonAssignedNonApproved(TEAM, creationDate.minusSeconds(10), 1)).hasSize(1);
+        assertThat(dao.findNonAssignedNonApproved(TEAM, creationDate.minusSeconds(10), 0)).hasSize(3);
     }
 
     private List<Commit> insertUserWithTeamAndFindNotifications(User user, int limit) {

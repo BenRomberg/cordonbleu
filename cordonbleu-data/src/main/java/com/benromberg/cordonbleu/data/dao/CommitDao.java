@@ -2,6 +2,7 @@ package com.benromberg.cordonbleu.data.dao;
 
 import static com.benromberg.cordonbleu.data.model.Commit.AUTHOR_PROPERTY;
 import static com.benromberg.cordonbleu.data.model.Commit.REPOSITORIES_PROPERTY;
+import static com.benromberg.cordonbleu.data.model.Commit.CREATED_PROPERTY;
 import static com.benromberg.cordonbleu.data.model.CommitRepository.REPOSITORY_PROPERTY;
 import static com.benromberg.cordonbleu.data.util.jackson.CaseInsensitiveUniqueValue.uniqueProperty;
 import static com.benromberg.cordonbleu.data.util.jackson.CaseInsensitiveUniqueValue.uniqueValue;
@@ -11,6 +12,7 @@ import static java.util.stream.Collectors.toList;
 import static org.mongojack.Aggregation.Expression.path;
 import com.benromberg.cordonbleu.util.CollectionUtil;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,6 +58,7 @@ public class CommitDao extends MongoDao<CommitId, Commit> {
     public CommitDao(DatabaseWithMigration db, CodeRepositoryMetadataDao repositoryDao, UserDao userDao, TeamDao teamDao) {
         super(db, CommitId.class, Commit.class, COLLECTION_NAME, createCustomModule(repositoryDao, userDao, teamDao));
         createIndex(REPOSITORIES_PROPERTY + "." + REPOSITORY_PROPERTY);
+        createIndex(CREATED_PROPERTY);
     }
 
     private static CustomModule createCustomModule(CodeRepositoryMetadataDao repositoryDao, UserDao userDao,
@@ -91,7 +94,7 @@ public class CommitDao extends MongoDao<CommitId, Commit> {
     }
 
     public Optional<Commit> updateAssignee(CommitId id, Optional<User> assignee) {
-        return update(id, DBUpdate.set(Commit.ASSIGNEE, assignee));
+        return update(id, DBUpdate.set(Commit.ASSIGNEE_PROPERTY, assignee));
     }
 
     public Optional<Commit> updateComment(CommitId commitId, String commentId, String text) {
@@ -148,10 +151,18 @@ public class CommitDao extends MongoDao<CommitId, Commit> {
             query = query.and(DBQuery.is(Commit.APPROVAL_PROPERTY, convertToDbObject(Optional.empty())));
         }
         if (commitFilter.getAssignedTo().isPresent()) {
-            query = query.and(DBQuery.is(Commit.ASSIGNEE, commitFilter.getAssignedTo()));
+            query = query.and(DBQuery.is(Commit.ASSIGNEE_PROPERTY, commitFilter.getAssignedTo()));
         }
 
         return findAndSort(query).limit(commitFilter.getLimit()).toArray();
+    }
+
+    public List<Commit> findNonAssignedNonApproved(Team team, LocalDateTime createdAfter, int limit) {
+        Query teamIdQuery = DBQuery.is(ID_PROPERTY + "." + CommitId.TEAM_PROPERTY, team);
+        Query noApprovalQuery = DBQuery.is(Commit.ASSIGNEE_PROPERTY, null);
+        Query noAssigneeQuery = DBQuery.is(Commit.APPROVAL_PROPERTY, null);
+        Query createdAfterQuery = DBQuery.greaterThan(Commit.CREATED_PROPERTY, createdAfter);
+        return find(DBQuery.and(teamIdQuery, noApprovalQuery, noAssigneeQuery, createdAfterQuery)).limit(limit).toArray();
     }
 
     private List<String> collectUniqueUserEmails(List<User> users) {
