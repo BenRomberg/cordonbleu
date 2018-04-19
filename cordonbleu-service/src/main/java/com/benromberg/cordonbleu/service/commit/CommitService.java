@@ -7,9 +7,11 @@ import com.benromberg.cordonbleu.data.model.Comment;
 import com.benromberg.cordonbleu.data.model.Commit;
 import com.benromberg.cordonbleu.data.model.CommitApproval;
 import com.benromberg.cordonbleu.data.model.CommitId;
+import com.benromberg.cordonbleu.data.model.Team;
 import com.benromberg.cordonbleu.data.model.User;
 import com.benromberg.cordonbleu.util.ClockService;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -63,6 +65,10 @@ public class CommitService {
                 .map(commit -> mapCommitToNotification(commit, user)).collect(toList());
         int totalAmount = (int) notifications.stream().filter(CommitNotification::isPrompt).count();
         return new CommitNotifications(totalAmount, notifications.stream().limit(limit).collect(toList()));
+    }
+
+    public List<Commit> findRecentCommitsToAssign(Team team) {
+        return commitDao.findNonAssignedNonApproved(team, LocalDateTime.now().minusDays(15), 500);
     }
 
     private CommitNotification mapCommitToNotification(Commit commit, User user) {

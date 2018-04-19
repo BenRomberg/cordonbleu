@@ -10,10 +10,12 @@ import com.benromberg.cordonbleu.data.model.CommentFixture;
 import com.benromberg.cordonbleu.data.model.Commit;
 import com.benromberg.cordonbleu.data.model.CommitApproval;
 import com.benromberg.cordonbleu.data.model.CommitFixture;
+import com.benromberg.cordonbleu.data.model.Team;
 import com.benromberg.cordonbleu.data.model.User;
 import com.benromberg.cordonbleu.util.ClockService;
 import com.benromberg.cordonbleu.util.SystemTimeRule;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -130,6 +132,21 @@ public class CommitServiceTest implements CommitFixture, CommentFixture {
         service.revertAssignment(COMMIT_ID);
 
         assertThat(dao.findById(COMMIT_ID).get().getAssignee()).isEmpty();
+    }
+
+    @Test
+    public void findRecentCommitsToAssign_OnlyReturnCommitsUpTo15Days() throws Exception {
+        Commit almostOldCommit = commit().id("recent-commit").created(LocalDateTime.now().minusDays(14)).build();
+        dao.insert(almostOldCommit);
+        dao.insert(commit().id("old-commit").created(LocalDateTime.now().minusDays(16)).build());
+
+        assertThat(service.findRecentCommitsToAssign(TEAM)).extracting(Commit::getId).containsExactly(COMMIT_ID, almostOldCommit.getId());
+    }
+
+    @Test
+    public void findRecentCommitsToAssign_OnlyReturnCommitsFromGivenTeam() throws Exception {
+        Team otherTeam = new TeamBuilder().name("other-team").build();
+        assertThat(service.findRecentCommitsToAssign(otherTeam)).isEmpty();
     }
 
     private Comment createComment() {
