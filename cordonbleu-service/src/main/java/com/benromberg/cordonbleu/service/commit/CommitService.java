@@ -45,6 +45,10 @@ public class CommitService {
         return commitDao.updateAssignee(commitId, Optional.of(user)).flatMap(Commit::getAssignee);
     }
 
+    public void assignCommitBatch(CommitBatchAssignment commitBatchAssignment) {
+        commitBatchAssignment.getCommits().forEach(commit -> commitDao.updateAssignee(commit.getId(), Optional.of(commitBatchAssignment.getUser())));
+    }
+
     public boolean revertAssignment(CommitId commitId) {
         return commitDao.updateAssignee(commitId, Optional.empty()).isPresent();
     }

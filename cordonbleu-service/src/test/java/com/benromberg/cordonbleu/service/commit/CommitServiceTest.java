@@ -16,6 +16,8 @@ import com.benromberg.cordonbleu.util.ClockService;
 import com.benromberg.cordonbleu.util.SystemTimeRule;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -132,6 +134,26 @@ public class CommitServiceTest implements CommitFixture, CommentFixture {
         service.revertAssignment(COMMIT_ID);
 
         assertThat(dao.findById(COMMIT_ID).get().getAssignee()).isEmpty();
+    }
+
+    @Test
+    public void assignCommitBatch_AllCommitsAreAssigned() throws Exception {
+        Commit otherCommit = commit().id(OTHER_COMMIT_HASH).build();
+        dao.insert(otherCommit);
+        service.assignCommitBatch(new CommitBatchAssignment(APPROVE_USER, Arrays.asList(COMMIT, otherCommit)));
+
+        assertThat(dao.findById(COMMIT_ID).get().getAssignee().get()).isEqualToComparingFieldByField(APPROVE_USER);
+        assertThat(dao.findById(otherCommit.getId()).get().getAssignee().get()).isEqualToComparingFieldByField(APPROVE_USER);
+    }
+
+    @Test
+    public void assignCommitBatch_OnlyProvidedCommitsAreAssigned() throws Exception {
+        Commit otherCommit = commit().id(OTHER_COMMIT_HASH).build();
+        dao.insert(otherCommit);
+        service.assignCommitBatch(new CommitBatchAssignment(APPROVE_USER, Collections.singletonList(otherCommit)));
+
+        assertThat(dao.findById(COMMIT_ID).get().getAssignee()).isEmpty();
+        assertThat(dao.findById(otherCommit.getId()).get().getAssignee().get()).isEqualToComparingFieldByField(APPROVE_USER);
     }
 
     @Test
