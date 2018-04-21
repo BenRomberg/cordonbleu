@@ -140,7 +140,7 @@ public class CommitServiceTest implements CommitFixture, CommentFixture {
     public void assignCommitBatch_AllCommitsAreAssigned() throws Exception {
         Commit otherCommit = commit().id(OTHER_COMMIT_HASH).build();
         dao.insert(otherCommit);
-        service.assignCommitBatch(new CommitBatchAssignment(APPROVE_USER, Arrays.asList(COMMIT, otherCommit)));
+        service.assignCommitBatch(new CommitBatchAssignment(APPROVE_USER, COMMIT_AUTHOR, Arrays.asList(COMMIT, otherCommit)));
 
         assertThat(dao.findById(COMMIT_ID).get().getAssignee().get()).isEqualToComparingFieldByField(APPROVE_USER);
         assertThat(dao.findById(otherCommit.getId()).get().getAssignee().get()).isEqualToComparingFieldByField(APPROVE_USER);
@@ -150,7 +150,7 @@ public class CommitServiceTest implements CommitFixture, CommentFixture {
     public void assignCommitBatch_OnlyProvidedCommitsAreAssigned() throws Exception {
         Commit otherCommit = commit().id(OTHER_COMMIT_HASH).build();
         dao.insert(otherCommit);
-        service.assignCommitBatch(new CommitBatchAssignment(APPROVE_USER, Collections.singletonList(otherCommit)));
+        service.assignCommitBatch(new CommitBatchAssignment(APPROVE_USER, COMMIT_AUTHOR, Collections.singletonList(otherCommit)));
 
         assertThat(dao.findById(COMMIT_ID).get().getAssignee()).isEmpty();
         assertThat(dao.findById(otherCommit.getId()).get().getAssignee().get()).isEqualToComparingFieldByField(APPROVE_USER);

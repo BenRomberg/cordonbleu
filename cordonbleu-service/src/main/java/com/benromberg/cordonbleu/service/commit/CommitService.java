@@ -46,7 +46,7 @@ public class CommitService {
     }
 
     public void assignCommitBatch(CommitBatchAssignment commitBatchAssignment) {
-        commitBatchAssignment.getCommits().forEach(commit -> commitDao.updateAssignee(commit.getId(), Optional.of(commitBatchAssignment.getUser())));
+        commitBatchAssignment.getCommits().forEach(commit -> commitDao.updateAssignee(commit.getId(), Optional.of(commitBatchAssignment.getAssignee())));
     }
 
     public boolean revertAssignment(CommitId commitId) {
