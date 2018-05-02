@@ -12,6 +12,7 @@ var TeamMemberView = require('./components/TeamMember.vue')
 var TeamCreateView = require('./components/TeamCreate.vue')
 var NameContestView = require('./components/NameContest.vue')
 var TeamSettingsView = require('./components/TeamSettings.vue')
+var GroupAssignmentView = require('./components/GroupAssignment.vue')
 
 require('./global.scss')
 var sharedConfig = require('json!./sharedConfig.json')
@@ -89,6 +90,10 @@ router.map({
         component: CommitDetailView
       }
     }
+  },
+  '/team/:teamName/groupAssignment': {
+    name: 'group-assignment',
+    component: GroupAssignmentView
   },
   '/team/:teamName/settings/general': {
     name: 'team-settings',

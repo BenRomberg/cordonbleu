@@ -81,8 +81,11 @@
                 li.divider(role="separator")
                 li: a(v-link="{ name: 'create-team' }") <span class="fa fa-fw fa-plus"></span> Create new Team
             template(v-if="activeTeam")
-              li: a(v-link="{ name: 'commits', activeClass: 'ignore' }", :class="{ 'active': !$route.fullPath.startsWith('/team/:teamName/settings') }")
+              li: a(v-link="{ name: 'commits', activeClass: 'ignore' }",
+                :class="{ 'active': !$route.fullPath.startsWith('/team/:teamName/settings') && !$route.fullPath.startsWith('/team/:teamName/groupAssignment') }")
                 | <span class="fa fa-code"></span> Commits
+              li: a(v-link="{ name: 'group-assignment', activeClass: 'ignore' }", :class="{ 'active': $route.fullPath.startsWith('/team/:teamName/groupAssignment') }")
+                | <span class="fa fa-hand-o-right"></span> Group assignment
               li.dropdown(v-if="hasTeamPermissionManage")
                 a.dropdown-toggle(data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false",
                   :class="{ 'active': $route.fullPath.startsWith('/team/:teamName/settings') }")
