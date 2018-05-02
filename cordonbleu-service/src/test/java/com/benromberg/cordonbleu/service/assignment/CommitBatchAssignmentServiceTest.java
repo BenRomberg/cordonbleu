@@ -1,12 +1,13 @@
-package com.benromberg.cordonbleu.service.commit;
+package com.benromberg.cordonbleu.service.assignment;
 
 import com.benromberg.cordonbleu.data.model.Commit;
 import com.benromberg.cordonbleu.data.model.CommitAuthor;
 import com.benromberg.cordonbleu.data.model.CommitFixture;
 import com.benromberg.cordonbleu.data.model.CommitId;
 import com.benromberg.cordonbleu.data.model.User;
+import com.benromberg.cordonbleu.service.assignment.CommitBatchAssignment;
+import com.benromberg.cordonbleu.service.assignment.CommitBatchAssignmentService;
 
-import org.assertj.core.api.Condition;
 import org.junit.Test;
 
 import java.util.Arrays;

@@ -9,6 +9,7 @@ import com.benromberg.cordonbleu.data.model.CommitApproval;
 import com.benromberg.cordonbleu.data.model.CommitId;
 import com.benromberg.cordonbleu.data.model.Team;
 import com.benromberg.cordonbleu.data.model.User;
+import com.benromberg.cordonbleu.service.assignment.CommitBatchAssignment;
 import com.benromberg.cordonbleu.util.ClockService;
 
 import java.time.LocalDateTime;

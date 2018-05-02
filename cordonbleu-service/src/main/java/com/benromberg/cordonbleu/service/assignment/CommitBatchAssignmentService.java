@@ -1,4 +1,4 @@
-package com.benromberg.cordonbleu.service.commit;
+package com.benromberg.cordonbleu.service.assignment;
 
 import com.benromberg.cordonbleu.data.model.Commit;
 import com.benromberg.cordonbleu.data.model.User;
