@@ -9,6 +9,7 @@ import com.benromberg.cordonbleu.data.model.CommitApproval;
 import com.benromberg.cordonbleu.data.model.CommitId;
 import com.benromberg.cordonbleu.data.model.Team;
 import com.benromberg.cordonbleu.data.model.User;
+import com.benromberg.cordonbleu.service.assignment.AssignmentEmailService;
 import com.benromberg.cordonbleu.service.assignment.CommitBatchAssignment;
 import com.benromberg.cordonbleu.util.ClockService;
 
@@ -23,14 +24,16 @@ public class CommitService {
     private final CommitDao commitDao;
     private final int notificationConsiderationAmount;
     private final TeamDao teamDao;
+    private final AssignmentEmailService assignmentEmailService;
 
     @Inject
     public CommitService(CommitDao commitDao, TeamDao teamDao,
-            CommitNotificationConsiderationAmount notificationConsiderationAmount) {
+            CommitNotificationConsiderationAmount notificationConsiderationAmount, AssignmentEmailService assignmentEmailService) {
         this.commitDao = commitDao;
         this.teamDao = teamDao;
         this.notificationConsiderationAmount = notificationConsiderationAmount
                 .getCommitNotificationConsiderationAmount();
+        this.assignmentEmailService = assignmentEmailService;
     }
 
     public Optional<CommitApproval> approve(CommitId commitId, User user) {
@@ -42,8 +45,9 @@ public class CommitService {
         return updateApproval(commitId, Optional.empty()).isPresent();
     }
 
-    public Optional<User> assign(CommitId commitId, User user) {
-        return commitDao.updateAssignee(commitId, Optional.of(user)).flatMap(Commit::getAssignee);
+    public Optional<User> assign(Commit commit, User assignedTo, User assignedBy) {
+        assignmentEmailService.sendSingleAssignmentEmail(commit, assignedTo, assignedBy);
+        return commitDao.updateAssignee(commit.getId(), Optional.of(assignedTo)).flatMap(Commit::getAssignee);
     }
 
     public void assignCommitBatch(CommitBatchAssignment commitBatchAssignment) {

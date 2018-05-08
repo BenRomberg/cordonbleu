@@ -157,7 +157,7 @@ public class CommitResource {
     public CommitAssignmentResponse assignCommit(AssignmentRequest request, @Auth UserWithPermissions user) {
         Commit commit = commitPermissionGuard.guardAssignment(user, request.getCommitId());
         User assignedTo = userService.findUserById(request.getUserId()).orElseThrow(NotFoundException::new);
-        return new CommitAssignmentResponse(commitService.assign(commit.getId(), assignedTo).get());
+        return new CommitAssignmentResponse(commitService.assign(commit, assignedTo, user.getUser()).get());
     }
 
     @POST

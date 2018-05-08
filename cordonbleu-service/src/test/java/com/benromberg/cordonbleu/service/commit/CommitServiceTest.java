@@ -1,7 +1,5 @@
 package com.benromberg.cordonbleu.service.commit;
 
-import static com.benromberg.cordonbleu.service.commit.CommitNotificationActionType.APPROVE;
-import static org.assertj.core.api.Assertions.assertThat;
 import com.benromberg.cordonbleu.data.dao.CommitDao;
 import com.benromberg.cordonbleu.data.dao.DaoRule;
 import com.benromberg.cordonbleu.data.dao.UserDao;
@@ -12,9 +10,14 @@ import com.benromberg.cordonbleu.data.model.CommitApproval;
 import com.benromberg.cordonbleu.data.model.CommitFixture;
 import com.benromberg.cordonbleu.data.model.Team;
 import com.benromberg.cordonbleu.data.model.User;
+import com.benromberg.cordonbleu.service.assignment.AssignmentEmailServiceMock;
 import com.benromberg.cordonbleu.service.assignment.CommitBatchAssignment;
 import com.benromberg.cordonbleu.util.ClockService;
 import com.benromberg.cordonbleu.util.SystemTimeRule;
+
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -22,9 +25,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import static com.benromberg.cordonbleu.service.commit.CommitNotificationActionType.APPROVE;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class CommitServiceTest implements CommitFixture, CommentFixture {
     private static final String OTHER_COMMIT_HASH = "other-commit-hash";
@@ -37,7 +39,8 @@ public class CommitServiceTest implements CommitFixture, CommentFixture {
 
     private final UserDao userDao = databaseRule.createUserDao();
     private final CommitDao dao = databaseRule.createCommitDao();
-    private final CommitService service = new CommitService(dao, databaseRule.createTeamDao(), () -> 100);
+    private final AssignmentEmailServiceMock assignmentEmailServiceMock = new AssignmentEmailServiceMock();
+    private final CommitService service = new CommitService(dao, databaseRule.createTeamDao(), () -> 100, assignmentEmailServiceMock);
 
     @Rule
     public SystemTimeRule systemTimeRule = new SystemTimeRule();
@@ -122,16 +125,22 @@ public class CommitServiceTest implements CommitFixture, CommentFixture {
 
     @Test
     public void assignCommit_CommitIsAssigned() throws Exception {
-        dao.addComment(COMMIT_ID, createComment());
-        service.assign(COMMIT_ID, APPROVE_USER);
-
+        service.assign(COMMIT, APPROVE_USER, COMMIT_USER);
         assertThat(dao.findById(COMMIT_ID).get().getAssignee().get()).isEqualToComparingFieldByField(APPROVE_USER);
+    }
+
+    @Test
+    public void assignCommit_EmailServiceIsCalled() throws Exception {
+        service.assign(COMMIT, APPROVE_USER, COMMIT_USER);
+        assertThat(assignmentEmailServiceMock.getCalledWithCommit()).isEqualToComparingFieldByField(COMMIT);
+        assertThat(assignmentEmailServiceMock.getCalledWithUser()).isEqualToComparingFieldByField(APPROVE_USER);
+        assertThat(assignmentEmailServiceMock.getCalledWithAssignedBy()).isEqualToComparingFieldByField(COMMIT_USER);
     }
 
     @Test
     public void revertAssignment_CommitIsNotAssigned() throws Exception {
         dao.addComment(COMMIT_ID, createComment());
-        service.assign(COMMIT_ID, APPROVE_USER);
+        service.assign(COMMIT, APPROVE_USER, COMMIT_USER);
         service.revertAssignment(COMMIT_ID);
 
         assertThat(dao.findById(COMMIT_ID).get().getAssignee()).isEmpty();
