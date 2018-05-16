@@ -99,6 +99,9 @@ code {
 .gap-detail {
   margin-right: 20px;
 }
+.assign-box-icon {
+  padding-right: 5px;
+}
 </style>
 
 <template lang="jade">
@@ -314,7 +317,7 @@ module.exports = {
     setupAssignmentMultiselect: function(commit) {
       $('#assignee-select').multiselect({
         maxHeight : 400,
-        buttonWidth : 200,
+        buttonWidth : 220,
         inheritClass : true,
         enableHTML: true,
         enableFiltering : true,
@@ -330,9 +333,9 @@ module.exports = {
       })
 
       var filterToOption = (filter, valueFunc, labelFunc, titleFunc, enabled) => {
-        return [{ value: '', title: 'Not assigned', label: '<b>Not assigned</b>', selected: 'selected', disabled: !enabled }].concat(filter.map(value => {
+        return [{ value: '', title: '<span class="fa fa-hand-o-right"></span> Not assigned', label: '<b>Not assigned</b>', selected: 'selected', disabled: !enabled }].concat(filter.map(value => {
           var isSelected = commit.assignment ? (value.id === commit.assignment.assignee.id) : false
-          return { value: valueFunc(value), title: "Assigned to ".concat(titleFunc(value)), label: labelFunc(value), selected: isSelected, disabled: !enabled }
+          return { value: valueFunc(value), title: "<span class=\"fa fa-hand-o-right assign-box-icon\"></span> ".concat(titleFunc(value)), label: labelFunc(value), selected: isSelected, disabled: !enabled }
         }))
       }
       var userOptions = filterToOption(this.activeTeam.filters.users, user => user.id, this.$options.filters.toUserWithAvatar, this.$options.filters.toCommitAuthorWithAvatar, this.loggedInUser)

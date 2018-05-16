@@ -92,7 +92,7 @@ th.icon {
           th.repositories Repositories
           th.icon <span class="fa fa-hand-o-right"></span>
           th.icon <span class="fa fa-comment"></span>
-          th.icon <span class="fa fa-check-square"></span>
+          th.icon <span class="fa fa-thumbs-o-up"></span>
         tr(v-for="commit in commits" v-link="{ name: 'commitDetail', params: { commitHash: commit.hash, teamName: $route.params.teamName }}", :class="{ 'info': commit.hash === $route.params.commitHash, 'removed': commit.removed }")
           td(:title="commit.hash") {{commit.hash.substring(0, 6)}}
           td(:title="commit.author | toCommitAuthor") {{{commit.author | toCommitAuthorWithAvatar}}}
