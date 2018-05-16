@@ -132,9 +132,9 @@ public class CommitServiceTest implements CommitFixture, CommentFixture {
     @Test
     public void assignCommit_EmailServiceIsCalled() throws Exception {
         service.assign(COMMIT, APPROVE_USER, COMMIT_USER);
-        assertThat(assignmentEmailServiceMock.getCalledWithCommit()).isEqualToComparingFieldByField(COMMIT);
-        assertThat(assignmentEmailServiceMock.getCalledWithUser()).isEqualToComparingFieldByField(APPROVE_USER);
-        assertThat(assignmentEmailServiceMock.getCalledWithAssignedBy()).isEqualToComparingFieldByField(COMMIT_USER);
+        assertThat(assignmentEmailServiceMock.getSingleAssignmentCalledWithCommit()).isEqualToComparingFieldByField(COMMIT);
+        assertThat(assignmentEmailServiceMock.getSingleAssignmentCalledWithUser()).isEqualToComparingFieldByField(APPROVE_USER);
+        assertThat(assignmentEmailServiceMock.getSingleAssignmentCalledWithAssignedBy()).isEqualToComparingFieldByField(COMMIT_USER);
     }
 
     @Test
@@ -150,7 +150,7 @@ public class CommitServiceTest implements CommitFixture, CommentFixture {
     public void assignCommitBatch_AllCommitsAreAssigned() throws Exception {
         Commit otherCommit = commit().id(OTHER_COMMIT_HASH).build();
         dao.insert(otherCommit);
-        service.assignCommitBatch(new CommitBatchAssignment(APPROVE_USER, COMMIT_AUTHOR, Arrays.asList(COMMIT, otherCommit)));
+        service.assignCommitBatch(new CommitBatchAssignment(APPROVE_USER, COMMIT_AUTHOR, Arrays.asList(COMMIT, otherCommit)), COMMIT_USER);
 
         assertThat(dao.findById(COMMIT_ID).get().getAssignee().get()).isEqualToComparingFieldByField(APPROVE_USER);
         assertThat(dao.findById(otherCommit.getId()).get().getAssignee().get()).isEqualToComparingFieldByField(APPROVE_USER);
@@ -160,10 +160,22 @@ public class CommitServiceTest implements CommitFixture, CommentFixture {
     public void assignCommitBatch_OnlyProvidedCommitsAreAssigned() throws Exception {
         Commit otherCommit = commit().id(OTHER_COMMIT_HASH).build();
         dao.insert(otherCommit);
-        service.assignCommitBatch(new CommitBatchAssignment(APPROVE_USER, COMMIT_AUTHOR, Collections.singletonList(otherCommit)));
+        service.assignCommitBatch(new CommitBatchAssignment(APPROVE_USER, COMMIT_AUTHOR, Collections.singletonList(otherCommit)),
+                COMMIT_USER);
 
         assertThat(dao.findById(COMMIT_ID).get().getAssignee()).isEmpty();
         assertThat(dao.findById(otherCommit.getId()).get().getAssignee().get()).isEqualToComparingFieldByField(APPROVE_USER);
+    }
+
+    @Test
+    public void assignCommitBatch_EmailServiceIsCalled() throws Exception {
+        Commit otherCommit = commit().id(OTHER_COMMIT_HASH).build();
+        dao.insert(otherCommit);
+        CommitBatchAssignment batch = new CommitBatchAssignment(APPROVE_USER, COMMIT_AUTHOR, Collections.singletonList(otherCommit));
+        service.assignCommitBatch(batch, COMMIT_USER);
+
+        assertThat(assignmentEmailServiceMock.getBatchAssignmentCalledWithBatch()).isEqualToComparingFieldByFieldRecursively(batch);
+        assertThat(assignmentEmailServiceMock.getBatchAssignmentCalledWithAssignedBy()).isEqualToComparingFieldByField(COMMIT_USER);
     }
 
     @Test

@@ -5,11 +5,15 @@ import com.benromberg.cordonbleu.data.model.User;
 
 public class AssignmentEmailServiceMock extends AssignmentEmailService {
 
-    private Commit calledWithCommit;
+    private Commit singleAssignmentCalledWithCommit;
 
-    private User calledWithUser;
+    private User singleAssignmentCalledWithUser;
 
-    private User calledWithAssignedBy;
+    private User singleAssignmentCalledWithAssignedBy;
+
+    private CommitBatchAssignment batchAssignmentCalledWithBatch;
+
+    private User batchAssignmentCalledWithAssignedBy;
 
     public AssignmentEmailServiceMock() {
         super(null);
@@ -17,20 +21,34 @@ public class AssignmentEmailServiceMock extends AssignmentEmailService {
 
     @Override
     public void sendSingleAssignmentEmail(Commit commit, User assignedTo, User assignedBy) {
-        calledWithCommit = commit;
-        calledWithUser = assignedTo;
-        calledWithAssignedBy = assignedBy;
+        singleAssignmentCalledWithCommit = commit;
+        singleAssignmentCalledWithUser = assignedTo;
+        singleAssignmentCalledWithAssignedBy = assignedBy;
     }
 
-    public Commit getCalledWithCommit() {
-        return calledWithCommit;
+    @Override
+    public void sendBatchAssignmentEmail(CommitBatchAssignment batchAssignment, User assignedBy) {
+        batchAssignmentCalledWithBatch = batchAssignment;
+        batchAssignmentCalledWithAssignedBy = assignedBy;
     }
 
-    public User getCalledWithUser() {
-        return calledWithUser;
+    public Commit getSingleAssignmentCalledWithCommit() {
+        return singleAssignmentCalledWithCommit;
     }
 
-    public User getCalledWithAssignedBy() {
-        return calledWithAssignedBy;
+    public User getSingleAssignmentCalledWithUser() {
+        return singleAssignmentCalledWithUser;
+    }
+
+    public User getSingleAssignmentCalledWithAssignedBy() {
+        return singleAssignmentCalledWithAssignedBy;
+    }
+
+    public CommitBatchAssignment getBatchAssignmentCalledWithBatch() {
+        return batchAssignmentCalledWithBatch;
+    }
+
+    public User getBatchAssignmentCalledWithAssignedBy() {
+        return batchAssignmentCalledWithAssignedBy;
     }
 }

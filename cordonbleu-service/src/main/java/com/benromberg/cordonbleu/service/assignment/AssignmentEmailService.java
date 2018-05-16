@@ -31,6 +31,14 @@ public class AssignmentEmailService {
                 new SingleAssignmentEmailTemplate(commit, assignedBy, getCommitPath(commit.getId())));
     }
 
+    public void sendBatchAssignmentEmail(CommitBatchAssignment batchAssignment, User assignedBy) {
+        String receiver = batchAssignment.getAssignee().getEmail();
+        LOGGER.info("Queuing email for assigning commit of {} to {}.", batchAssignment.getCommitAuthor().getEmail(), receiver);
+
+        emailService.queueEmail(Collections.singleton(receiver), assignedBy,
+                new BatchAssignmentEmailTemplate(batchAssignment, this::getCommitPath, assignedBy));
+    }
+
     private String getCommitPath(CommitId commitId) {
         return getCommitPathResolver(commitId.getTeam()).apply(commitId.getHash());
     }

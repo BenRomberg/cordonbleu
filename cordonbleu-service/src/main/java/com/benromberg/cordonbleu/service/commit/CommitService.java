@@ -50,7 +50,8 @@ public class CommitService {
         return commitDao.updateAssignee(commit.getId(), Optional.of(assignedTo)).flatMap(Commit::getAssignee);
     }
 
-    public void assignCommitBatch(CommitBatchAssignment commitBatchAssignment) {
+    public void assignCommitBatch(CommitBatchAssignment commitBatchAssignment, User assignedBy) {
+        assignmentEmailService.sendBatchAssignmentEmail(commitBatchAssignment, assignedBy);
         commitBatchAssignment.getCommits().forEach(commit -> commitDao.updateAssignee(commit.getId(), Optional.of(commitBatchAssignment.getAssignee())));
     }
 

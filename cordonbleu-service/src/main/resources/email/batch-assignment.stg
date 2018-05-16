@@ -1,0 +1,16 @@
+subject(commitAuthor, commitEmailItems, assignedBy) ::= "$length(commitEmailItems)$ recent commit(s) of $commitAuthor.name$ were assigned to you"
+
+plainBody(commitAuthor, commitEmailItems, assignedBy) ::= <<
+===
+$assignedBy.name$ has triggered a Group Assignment of recent commits. $length(commitEmailItems)$ recent commit(s) of $commitAuthor.name$ were assigned to you.
+===
+>>
+
+htmlBody(commitAuthor, commitEmailItems, assignedBy) ::= <<
+<p>$assignedBy.name$ has triggered a Group Assignment of recent commits. $length(commitEmailItems)$ recent commit(s) of $commitAuthor.name$ were assigned to you.</p>
+
+<ul>
+  $commitEmailItems:{it | <li><a href="$it.commitPath$"><b>$it.commit.id.hash$</b></a></li>}$
+</ul>
+>>
+

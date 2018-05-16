@@ -60,7 +60,7 @@ public class GroupAssignmentResource {
         }
 
         List<CommitBatchAssignment> assignments = commitBatchAssignmentService.generateCommitBatchAssignments(commitsToAssign, users);
-        assignments.forEach(commitService::assignCommitBatch);
+        assignments.forEach(batch -> commitService.assignCommitBatch(batch, user.getUser()));
         return assignments.stream().map(this::toResponse).collect(Collectors.toList());
     }
 
