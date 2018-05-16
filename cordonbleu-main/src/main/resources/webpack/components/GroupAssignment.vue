@@ -60,7 +60,8 @@ module.exports = {
         inheritClass : true,
         enableHTML: true,
         enableFiltering : true,
-        enableCaseInsensitiveFiltering : true
+        enableCaseInsensitiveFiltering : true,
+        includeSelectAllOption: true
       })
 
       var filterToOption = (filter, valueFunc, labelFunc, enabled) => {
