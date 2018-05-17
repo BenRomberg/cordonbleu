@@ -5,8 +5,6 @@ import com.benromberg.cordonbleu.data.model.CommitAuthor;
 import com.benromberg.cordonbleu.data.model.CommitFixture;
 import com.benromberg.cordonbleu.data.model.CommitId;
 import com.benromberg.cordonbleu.data.model.User;
-import com.benromberg.cordonbleu.service.assignment.CommitBatchAssignment;
-import com.benromberg.cordonbleu.service.assignment.CommitBatchAssignmentService;
 
 import org.junit.Test;
 
@@ -15,7 +13,6 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class CommitBatchAssignmentServiceTest implements CommitFixture {
 
@@ -38,20 +35,6 @@ public class CommitBatchAssignmentServiceTest implements CommitFixture {
     private static final User USER_3 = new User("user-three-email", "commit-three-user", "password-three");
 
     private final CommitBatchAssignmentService service = new CommitBatchAssignmentService();
-
-    @Test
-    public void generateBatch_ForEmptyCommitsList_ThrowsIllegalArgumentException() {
-        assertThatThrownBy(
-                () -> service.generateCommitBatchAssignments(Collections.emptyList(), Collections.singletonList(USER_1))).isInstanceOf(
-                IllegalArgumentException.class);
-    }
-
-    @Test
-    public void generateBatch_ForEmptyUsersList_ThrowsIllegalArgumentException() {
-        assertThatThrownBy(
-                () -> service.generateCommitBatchAssignments(Collections.emptyList(), Collections.singletonList(USER_1))).isInstanceOf(
-                IllegalArgumentException.class);
-    }
 
     @Test
     public void generateBatch_ForOneUserOneCommit_ReturnsOneCommitBatchAssignment() {

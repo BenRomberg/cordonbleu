@@ -13,7 +13,6 @@ import java.util.stream.Collectors;
 public class CommitBatchAssignmentService {
 
     public List<CommitBatchAssignment> generateCommitBatchAssignments(List<Commit> commits, List<User> users) {
-        checkNotEmpty(commits, users);
         UsersRandomLoopIterator usersIterator = new UsersRandomLoopIterator(users);
 
         return commits.stream()
@@ -26,15 +25,6 @@ public class CommitBatchAssignmentService {
 
     private CommitBatchAssignment toCommitBatchAssignment(User user, Map.Entry<String, List<Commit>> entry) {
         return new CommitBatchAssignment(user, entry.getValue().iterator().next().getAuthor(), entry.getValue());
-    }
-
-    private void checkNotEmpty(List<Commit> commits, List<User> users) {
-        if (commits.isEmpty()) {
-            throw new IllegalArgumentException("Commits list shall not be null");
-        }
-        if (users.isEmpty()) {
-            throw new IllegalArgumentException("Users list shall not be null");
-        }
     }
 
     private class UsersRandomLoopIterator {
