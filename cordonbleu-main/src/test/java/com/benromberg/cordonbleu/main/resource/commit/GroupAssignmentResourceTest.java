@@ -89,7 +89,7 @@ public class GroupAssignmentResourceTest implements CommitFixture, UserFixture {
         Response response = RULE.withTeamUser().post("/api/groupAssignment", ASSIGNMENT_WITH_ONE_USER);
         assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
 
-        List<GroupAssignmentResponse> assignments = readResponse(response);
+        List<ReadGroupAssignmentResponse> assignments = readResponse(response);
         assertThat(assignments).hasSize(2);
         assertThat(assignments).anySatisfy(assignment -> {
             assertThat(assignment.getAssignee()).isEqualToComparingFieldByField(USER);
@@ -103,8 +103,8 @@ public class GroupAssignmentResourceTest implements CommitFixture, UserFixture {
         });
     }
 
-    private List<GroupAssignmentResponse> readResponse(Response response) {
-        return response.readEntity(new GenericType<List<GroupAssignmentResponse>>() {
+    private List<ReadGroupAssignmentResponse> readResponse(Response response) {
+        return response.readEntity(new GenericType<List<ReadGroupAssignmentResponse>>() {
         });
     }
 }
