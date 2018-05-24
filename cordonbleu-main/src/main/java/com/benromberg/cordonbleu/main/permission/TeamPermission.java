@@ -25,7 +25,7 @@ public enum TeamPermission {
     ASSIGN {
         @Override
         public boolean grantTo(UserWithPermissions user, Team team) {
-            return (!team.isPrivate() && !team.isApproveMemberOnly() && user.isKnown()) || user.belongsTo(team);
+            return user.belongsTo(team);
         }
     },
     MANAGE {
