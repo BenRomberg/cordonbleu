@@ -57,7 +57,7 @@ public class TeamResourceTest implements RepositoryFixture, UserFixture {
 
     @Test
     public void getTeam_WithPublicTeamAndLoggedIn_ReturnsCommentableAndApprovableTeam() throws Exception {
-        Response response = RULE.withAuthenticatedUser().param("name", TEAM_NAME).get("/api/team");
+        Response response = RULE.withTeamUser().param("name", TEAM_NAME).get("/api/team");
         assertThat(response.getStatus()).isEqualTo(Status.OK.getStatusCode());
         ReadActiveTeamResponse team = response.readEntity(ReadActiveTeamResponse.class);
         assertThat(team.getPermissions()).containsOnly(TeamPermission.VIEW, TeamPermission.APPROVE,

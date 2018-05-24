@@ -390,7 +390,7 @@ public class CommitResourceTest implements CommitFixture {
     @Test
     public void assign_WithExistingCommit_ReturnsApproval() throws Exception {
         commitDao.insert(COMMIT);
-        Response response = RULE.withAuthenticatedUser().post("/api/commit/assign",
+        Response response = RULE.withTeamUser().post("/api/commit/assign",
                 new AssignmentRequest(COMMIT_HASH, TEAM_ID, CommentFixture.COMMENT_USER.getId()));
         assertThat(response.getStatus()).isEqualTo(Status.OK.getStatusCode());
         ReadCommitAssignmentResponse assignmentResponse = response
@@ -455,7 +455,7 @@ public class CommitResourceTest implements CommitFixture {
         commitDao.insert(COMMIT);
         commitDao.updateApproval(COMMIT_ID,
                 Optional.of(new CommitApproval(RULE.getAuthenticatedUser(), ClockService.now())));
-        Response response = RULE.withAuthenticatedUser().post("/api/commit/revertAssignment",
+        Response response = RULE.withTeamUser().post("/api/commit/revertAssignment",
                 new RevertAssignmentRequest(COMMIT_HASH, TEAM_ID));
         assertThat(response.getStatus()).isEqualTo(Status.NO_CONTENT.getStatusCode());
     }
