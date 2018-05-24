@@ -1,9 +1,5 @@
 package com.benromberg.cordonbleu.data.model;
 
-import static java.util.Collections.emptyList;
-
-import java.util.List;
-
 import com.benromberg.cordonbleu.data.util.RandomIdGenerator;
 import com.benromberg.cordonbleu.data.util.jackson.CaseInsensitiveUniqueDeserializer;
 import com.benromberg.cordonbleu.data.util.jackson.CaseInsensitiveUniqueSerializer;
@@ -11,6 +7,10 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+import java.util.List;
+
+import static java.util.Collections.emptyList;
 
 public class User extends NamedEntity {
     public static final String TEAMS_PROPERTY = "teams";
@@ -38,9 +38,9 @@ public class User extends NamedEntity {
     private final List<UserTeam> teams;
 
     @JsonCreator
-    private User(String id, @JsonProperty(NAME_PROPERTY) String name, @JsonProperty(EMAIL_PROPERTY) String email,
-            String encryptedPassword, @JsonProperty(EMAIL_ALIASES_PROPERTY) List<String> emailAliases,
-            @JsonProperty(FLAGS_PROPERTY) List<UserFlag> flags, @JsonProperty(TEAMS_PROPERTY) List<UserTeam> teams) {
+    private User(String id, @JsonProperty(NAME_PROPERTY) String name, @JsonProperty(EMAIL_PROPERTY) String email, String encryptedPassword,
+            @JsonProperty(EMAIL_ALIASES_PROPERTY) List<String> emailAliases, @JsonProperty(FLAGS_PROPERTY) List<UserFlag> flags,
+            @JsonProperty(TEAMS_PROPERTY) List<UserTeam> teams) {
         super(id, name);
         this.email = email;
         this.encryptedPassword = encryptedPassword;
@@ -50,7 +50,11 @@ public class User extends NamedEntity {
     }
 
     public User(String email, String name, String encryptedPassword) {
-        this(RandomIdGenerator.generate(), name, email, encryptedPassword, emptyList(), emptyList(), emptyList());
+        this(email, name, encryptedPassword, emptyList());
+    }
+
+    public User(String email, String name, String encryptedPassword, List<String> emailAliases) {
+        this(RandomIdGenerator.generate(), name, email, encryptedPassword, emailAliases, emptyList(), emptyList());
     }
 
     public List<UserTeam> getTeams() {

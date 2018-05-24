@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class CommitBatchAssignmentService {
@@ -19,12 +20,14 @@ public class CommitBatchAssignmentService {
                 .collect(Collectors.groupingBy(commit -> commit.getAuthor().getEmail()))
                 .entrySet()
                 .stream()
-                .map(entry -> toCommitBatchAssignment(usersIterator.getNext(), entry))
+                .map(entry -> toCommitBatchAssignment(usersIterator.getNextWithEmailNotEqualTo(entry.getKey()), entry))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
                 .collect(Collectors.toList());
     }
 
-    private CommitBatchAssignment toCommitBatchAssignment(User user, Map.Entry<String, List<Commit>> entry) {
-        return new CommitBatchAssignment(user, entry.getValue().iterator().next().getAuthor(), entry.getValue());
+    private Optional<CommitBatchAssignment> toCommitBatchAssignment(Optional<User> user, Map.Entry<String, List<Commit>> entry) {
+        return user.map(assignTo -> new CommitBatchAssignment(assignTo, entry.getValue().iterator().next().getAuthor(), entry.getValue()));
     }
 
     private class UsersRandomLoopIterator {
@@ -37,11 +40,27 @@ public class CommitBatchAssignmentService {
             iterator = shuffledUsers.iterator();
         }
 
-        private User getNext() {
-            if (!iterator.hasNext()) {
-                iterator = shuffledUsers.iterator();
+        private Optional<User> getNextWithEmailNotEqualTo(String emailToIgnore) {
+            int resetCount = 0;
+
+            while (resetCount < 2) {
+                if (!iterator.hasNext()) {
+                    iterator = shuffledUsers.iterator();
+                    resetCount++;
+                }
+
+                User nextUser = iterator.next();
+
+                if (isEmailNotEqualTo(nextUser, emailToIgnore)) {
+                    return Optional.of(nextUser);
+                }
             }
-            return iterator.next();
+
+            return Optional.empty();
+        }
+
+        private boolean isEmailNotEqualTo(User user, String email) {
+            return !user.getEmail().equals(email) && !user.getEmailAliases().contains(email);
         }
     }
 }

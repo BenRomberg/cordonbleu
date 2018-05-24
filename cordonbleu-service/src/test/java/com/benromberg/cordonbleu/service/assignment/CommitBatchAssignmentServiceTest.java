@@ -34,6 +34,10 @@ public class CommitBatchAssignmentServiceTest implements CommitFixture {
     private static final User USER_2 = new User("user-two-email", "commit-two-user", "password-two");
     private static final User USER_3 = new User("user-three-email", "commit-three-user", "password-three");
 
+    private static final User USER_COMMIT_AUTHOR_1 = new User(COMMIT_AUTHOR_1.getEmail(), "commit-author-1-user", "password-four");
+    private static final User USER_COMMIT_AUTHOR_2_ALIAS = new User("some-email", "commit-author-1-user", "password-four",
+            Arrays.asList("again-some-email", COMMIT_AUTHOR_2.getEmail()));
+
     private final CommitBatchAssignmentService service = new CommitBatchAssignmentService();
 
     @Test
@@ -88,6 +92,32 @@ public class CommitBatchAssignmentServiceTest implements CommitFixture {
         assertThat(result).anySatisfy(item -> assertCommits(item, COMMIT_AUTHOR_1, COMMIT_ID_1, COMMIT_ID_11));
         assertThat(result).anySatisfy(item -> assertCommits(item, COMMIT_AUTHOR_2, COMMIT_ID_2));
         assertThat(result).anySatisfy(item -> assertCommits(item, COMMIT_AUTHOR_3, COMMIT_ID_3));
+    }
+
+    @Test
+    public void generateBatch_ForOneUserOneCommit_WithSameEmail_NothingAssigned() {
+        List<CommitBatchAssignment> result = service.generateCommitBatchAssignments(Collections.singletonList(COMMIT_1),
+                Collections.singletonList(USER_COMMIT_AUTHOR_1));
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    public void generateBatch_ForOneUserOneCommit_WithSameEmailAlias_NothingAssigned() {
+        List<CommitBatchAssignment> result = service.generateCommitBatchAssignments(Collections.singletonList(COMMIT_2),
+                Collections.singletonList(USER_COMMIT_AUTHOR_2_ALIAS));
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    public void generateBatch_DoesNotAssignUsersToTheirOwnCommits() {
+        List<CommitBatchAssignment> result = service.generateCommitBatchAssignments(Arrays.asList(COMMIT_1, COMMIT_11, COMMIT_3),
+                Arrays.asList(USER_1, USER_COMMIT_AUTHOR_1));
+
+        assertThat(result).hasSize(2);
+        assertThat(result).anySatisfy(item -> assertBatchAssignment(item, USER_1, COMMIT_AUTHOR_1, COMMIT_1.getId(), COMMIT_11.getId()));
+        assertThat(result).anySatisfy(item -> assertBatchAssignment(item, USER_COMMIT_AUTHOR_1, COMMIT_AUTHOR_3, COMMIT_3.getId()));
     }
 
     private void assertBatchAssignment(CommitBatchAssignment commitBatchAssignment, User user, CommitAuthor commitAuthor,
