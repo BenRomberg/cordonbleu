@@ -1,28 +1,15 @@
 package com.benromberg.cordonbleu.service.coderepository;
 
-import static com.benromberg.cordonbleu.util.ExceptionUtil.convertException;
-import static java.util.Arrays.asList;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
 import com.benromberg.cordonbleu.data.model.CodeRepositoryMetadata;
 import com.benromberg.cordonbleu.data.model.Commit;
 import com.benromberg.cordonbleu.data.model.CommitAuthor;
 import com.benromberg.cordonbleu.data.model.CommitId;
 import com.benromberg.cordonbleu.data.model.CommitRepository;
-
-import java.io.File;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
+import com.benromberg.cordonbleu.service.coderepository.keypair.SshPrivateKeyPasswordProvider;
+import com.benromberg.cordonbleu.util.ClockService;
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
@@ -43,16 +30,40 @@ import org.eclipse.jgit.transport.OpenSshConfig.Host;
 import org.eclipse.jgit.transport.SshTransport;
 import org.eclipse.jgit.transport.Transport;
 import org.eclipse.jgit.util.FS;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import com.benromberg.cordonbleu.service.coderepository.keypair.SshPrivateKeyPasswordProvider;
-import com.jcraft.jsch.JSch;
-import com.jcraft.jsch.JSchException;
-import com.jcraft.jsch.Session;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+
+import static com.benromberg.cordonbleu.util.ExceptionUtil.convertException;
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 public class GitRepository implements CodeRepository, AutoCloseable {
+    private static final Logger LOGGER = LoggerFactory.getLogger(GitRepository.class);
     private static final int PULL_LIMIT = 100;
     private static final Charset CHARSET = StandardCharsets.UTF_8;
     private static final String REMOTE_BRANCH_PREFIX = Constants.R_REMOTES + Constants.DEFAULT_REMOTE_NAME + "/";
+    private static final String INDEX_LOCK_FILE = "index.lock";
+    private static final Duration LOCK_TIMEOUT = Duration.ofMinutes(5);
 
     static {
         JSch.setConfig("StrictHostKeyChecking", "no");
@@ -63,19 +74,17 @@ public class GitRepository implements CodeRepository, AutoCloseable {
     private final CodeRepositoryMetadata repositoryMetadata;
     private final SshPrivateKeyPasswordProvider passwordProvider;
 
-    public GitRepository(CodeRepositoryMetadata repositoryMetadata, File folder,
-            SshPrivateKeyPasswordProvider passwordProvider) {
+    public GitRepository(CodeRepositoryMetadata repositoryMetadata, File folder, SshPrivateKeyPasswordProvider passwordProvider) {
         this.repositoryMetadata = repositoryMetadata;
         this.passwordProvider = passwordProvider;
         if (folder.exists()) {
-            repository = convertException(() -> new FileRepositoryBuilder().setGitDir(
-                    new File(folder, Constants.DOT_GIT)).build());
+            repository = convertException(() -> new FileRepositoryBuilder().setGitDir(new File(folder, Constants.DOT_GIT)).build());
             git = new Git(repository);
             configureRepository();
             return;
         }
-        git = callWithAuthentication(Git.cloneRepository().setURI(repositoryMetadata.getSourceUrl())
-                .setDirectory(folder).setCloneAllBranches(true));
+        git = callWithAuthentication(
+                Git.cloneRepository().setURI(repositoryMetadata.getSourceUrl()).setDirectory(folder).setCloneAllBranches(true));
         repository = git.getRepository();
         configureRepository();
     }
@@ -90,10 +99,27 @@ public class GitRepository implements CodeRepository, AutoCloseable {
 
     @Override
     public PullResult pull(Collection<Commit> existingCommits) {
+        if (convertException(this::repositoryIsLocked)) {
+            LOGGER.warn("Repository {} is locked, waiting {} before unlocking it. Skipping Pull for now.", repositoryMetadata.getName(),
+                    LOCK_TIMEOUT);
+            return new PullResult(emptyList(), emptyList());
+        }
         convertException(() -> git.reset().setMode(ResetType.HARD).call());
         convertException(() -> git.clean().setCleanDirectories(true).setIgnore(false).call());
         callWithAuthentication(git.pull().setStrategy(MergeStrategy.THEIRS));
         return collectCommits(new HashSet<>(existingCommits));
+    }
+
+    private boolean repositoryIsLocked() throws IOException {
+        File indexLock = new File(repository.getDirectory(), INDEX_LOCK_FILE);
+        if (indexLock.exists()) {
+            if (Instant.ofEpochMilli(indexLock.lastModified()).plus(LOCK_TIMEOUT).isBefore(ClockService.now().toInstant(ZoneOffset.UTC))) {
+                Files.delete(indexLock.toPath());
+                return false;
+            }
+            return true;
+        }
+        return false;
     }
 
     private PullResult collectCommits(Set<Commit> existingCommits) {
@@ -117,13 +143,12 @@ public class GitRepository implements CodeRepository, AutoCloseable {
         });
         Set<String> removedHashes = new HashSet<>(existingHashes);
         removedHashes.removeAll(repositoryHashes);
-        return new PullResult(newCommits, removedHashes.stream()
-                .map(hash -> new CommitId(hash, repositoryMetadata.getTeam())).collect(toList()));
+        return new PullResult(newCommits,
+                removedHashes.stream().map(hash -> new CommitId(hash, repositoryMetadata.getTeam())).collect(toList()));
     }
 
     public List<String> getBranches() {
-        return getRemoteBranchReferences().stream()
-                .map(branchReference -> convertBranchReferenceToName(branchReference)).collect(toList());
+        return getRemoteBranchReferences().stream().map(branchReference -> convertBranchReferenceToName(branchReference)).collect(toList());
     }
 
     private String convertBranchReferenceToName(Ref branchReference) {
@@ -153,8 +178,12 @@ public class GitRepository implements CodeRepository, AutoCloseable {
     }
 
     private List<String> getBranchesForCommit(RevCommit commit) {
-        return convertException(() -> git.branchList().setListMode(ListMode.REMOTE).setContains(commit.getName())
-                .call().stream().map(branchReference -> convertBranchReferenceToName(branchReference))
+        return convertException(() -> git.branchList()
+                .setListMode(ListMode.REMOTE)
+                .setContains(commit.getName())
+                .call()
+                .stream()
+                .map(branchReference -> convertBranchReferenceToName(branchReference))
                 .collect(toList()));
     }
 
@@ -180,8 +209,8 @@ public class GitRepository implements CodeRepository, AutoCloseable {
         @Override
         protected JSch createDefaultJSch(FS fs) throws JSchException {
             JSch defaultJSch = super.createDefaultJSch(fs);
-            defaultJSch.addIdentity(null, repositoryMetadata.getTeam().getKeyPair().getPrivateKey().getBytes(CHARSET),
-                    null, passwordProvider.getSshPrivateKeyPassword().getBytes(CHARSET));
+            defaultJSch.addIdentity(null, repositoryMetadata.getTeam().getKeyPair().getPrivateKey().getBytes(CHARSET), null,
+                    passwordProvider.getSshPrivateKeyPassword().getBytes(CHARSET));
             return defaultJSch;
         }
     }

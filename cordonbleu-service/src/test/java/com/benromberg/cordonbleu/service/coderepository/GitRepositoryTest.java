@@ -1,5 +1,29 @@
 package com.benromberg.cordonbleu.service.coderepository;
 
+import com.benromberg.cordonbleu.data.model.CodeRepositoryMetadata;
+import com.benromberg.cordonbleu.data.model.Commit;
+import com.benromberg.cordonbleu.data.model.CommitFixture;
+import com.benromberg.cordonbleu.data.model.CommitId;
+import com.benromberg.cordonbleu.data.model.CommitRepository;
+import com.benromberg.cordonbleu.data.model.TeamKeyPair;
+import com.benromberg.cordonbleu.util.ClasspathUtil;
+import com.benromberg.cordonbleu.util.SystemTimeRule;
+
+import org.eclipse.jgit.revwalk.RevCommit;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.Base64;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+
 import static com.benromberg.cordonbleu.service.coderepository.GitTestRepository.COMMITTED_FILE_CONTENT;
 import static com.benromberg.cordonbleu.service.coderepository.GitTestRepository.COMMITTED_FILE_NAME;
 import static com.benromberg.cordonbleu.service.coderepository.GitTestRepository.withinMarginOfError;
@@ -10,33 +34,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.eclipse.jgit.lib.Constants.MASTER;
 import static org.eclipse.jgit.lib.Constants.OBJECT_ID_STRING_LENGTH;
-import com.benromberg.cordonbleu.data.model.CodeRepositoryMetadata;
-import com.benromberg.cordonbleu.data.model.Commit;
-import com.benromberg.cordonbleu.data.model.CommitFixture;
-import com.benromberg.cordonbleu.data.model.CommitId;
-import com.benromberg.cordonbleu.data.model.CommitRepository;
-import com.benromberg.cordonbleu.data.model.TeamKeyPair;
-import com.benromberg.cordonbleu.util.ClasspathUtil;
-
-import java.io.File;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-
-import org.eclipse.jgit.revwalk.RevCommit;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-
-import com.benromberg.cordonbleu.service.coderepository.CommitDetail;
-import com.benromberg.cordonbleu.service.coderepository.CommitFile;
-import com.benromberg.cordonbleu.service.coderepository.CommitFileState;
-import com.benromberg.cordonbleu.service.coderepository.CommitWithRepository;
-import com.benromberg.cordonbleu.service.coderepository.GitRepository;
-import com.benromberg.cordonbleu.service.coderepository.PullResult;
 
 public class GitRepositoryTest implements CommitFixture {
     private static final String BINARY_FILENAME = "file.bin";
@@ -44,8 +41,7 @@ public class GitRepositoryTest implements CommitFixture {
     private static final String NEW_FILE_NAME = "new-file-name";
     private static final String NEW_BRANCH = "new-branch";
     private static final String WHITESPACE_CONTENT = "\t ";
-    private static final String BINARY_CONTENT = new String(Base64.getDecoder().decode(
-            "000102030405060708090a0b0c0d0e0f"));
+    private static final String BINARY_CONTENT = new String(Base64.getDecoder().decode("000102030405060708090a0b0c0d0e0f"));
     private static final String ISO_8859_1_CONTENT = "äußerst übermäßige Verwendung von Sonderzeichen";
     private static final String PRIVATE_KEY = ClasspathUtil.readFileFromClasspath("keys/private.key");
     private static final String PRIVATE_KEY_PASSWORD = "private-key-password";
@@ -55,6 +51,9 @@ public class GitRepositoryTest implements CommitFixture {
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
+    @Rule
+    public SystemTimeRule systemTimeRule = new SystemTimeRule();
 
     private GitRepository repository;
     private File repositoryFolder;
@@ -104,8 +103,8 @@ public class GitRepositoryTest implements CommitFixture {
         assertThat(commit.getAuthor().getEmail()).isEqualTo(COMMIT_AUTHOR_EMAIL);
         assertThat(commit.getMessage()).isEqualTo(COMMIT_MESSAGE);
         assertThat(commit.getCreated()).is(withinMarginOfError(git.getLastCommitTime()));
-        assertThat(commit.getRepositories()).extracting(repository -> repository.getRepository().getName(),
-                CommitRepository::getBranches).containsExactly(tuple(REPOSITORY_NAME, asList(MASTER)));
+        assertThat(commit.getRepositories()).extracting(repository -> repository.getRepository().getName(), CommitRepository::getBranches)
+                .containsExactly(tuple(REPOSITORY_NAME, asList(MASTER)));
     }
 
     @Test
@@ -117,8 +116,25 @@ public class GitRepositoryTest implements CommitFixture {
         git.checkout(MASTER);
         git.merge(newBranchName);
         Collection<Commit> commits = pull();
-        assertThat(commits).extracting(commit -> commit.getRepositories().get(0).getBranches()).containsExactly(
-                asList(MASTER, NEW_BRANCH), asList(MASTER, NEW_BRANCH));
+        assertThat(commits).extracting(commit -> commit.getRepositories().get(0).getBranches())
+                .containsExactly(asList(MASTER, NEW_BRANCH), asList(MASTER, NEW_BRANCH));
+    }
+
+    @Test
+    public void pull_WithLockedRepository_WontPullImmediately() throws Exception {
+        git.createFileAndCommit();
+        createIndexLockFile();
+        Collection<Commit> commits = pull();
+        assertThat(commits).isEmpty();
+    }
+
+    @Test
+    public void pull_WithLockedRepository_WillPullAfterLockTimeout() throws Exception {
+        git.createFileAndCommit();
+        createIndexLockFile();
+        systemTimeRule.advanceByDuration(Duration.ofMinutes(6));
+        Collection<Commit> commits = pull();
+        assertThat(commits).hasSize(1);
     }
 
     @Test
@@ -138,8 +154,7 @@ public class GitRepositoryTest implements CommitFixture {
         List<Commit> initialCommits = pull();
         git.resetToCommit(firstCommit.getName());
         PullResult pullResult = pullResult(initialCommits);
-        assertThat(pullResult.getRemovedCommitIds()).extracting(CommitId::getHash).containsExactly(
-                removedCommit.getName());
+        assertThat(pullResult.getRemovedCommitIds()).extracting(CommitId::getHash).containsExactly(removedCommit.getName());
     }
 
     @Test
@@ -151,8 +166,7 @@ public class GitRepositoryTest implements CommitFixture {
         git.checkout(MASTER);
         git.deleteBranch(NEW_BRANCH);
         PullResult pullResult = pullResult(initialCommits);
-        assertThat(pullResult.getRemovedCommitIds()).extracting(CommitId::getHash).containsExactly(
-                removedCommit.getName());
+        assertThat(pullResult.getRemovedCommitIds()).extracting(CommitId::getHash).containsExactly(removedCommit.getName());
     }
 
     @Test
@@ -168,8 +182,7 @@ public class GitRepositoryTest implements CommitFixture {
 
     @Test
     public void creatingRepositoryTwice_ReusesFirstRepository_AndWorks() throws Exception {
-        repository = new GitRepository(repository().sourceUrl(git.getUrl()).build(), repositoryFolder,
-                () -> PRIVATE_KEY_PASSWORD);
+        repository = new GitRepository(repository().sourceUrl(git.getUrl()).build(), repositoryFolder, () -> PRIVATE_KEY_PASSWORD);
         git.createFileAndCommit();
         repository.pull(asList());
         List<String> branches = repository.getBranches();
@@ -181,8 +194,7 @@ public class GitRepositoryTest implements CommitFixture {
         git.createFileAndCommit();
         Commit firstCommit = pull().get(0);
         git.createFileAndCommit();
-        repository = new GitRepository(repositoryMetadata, new File(temporaryFolder.getRoot(), "newFolder"),
-                () -> PRIVATE_KEY_PASSWORD);
+        repository = new GitRepository(repositoryMetadata, new File(temporaryFolder.getRoot(), "newFolder"), () -> PRIVATE_KEY_PASSWORD);
         git.createFileAndCommit();
         List<Commit> secondCommit = pull(firstCommit);
         assertThat(secondCommit).hasSize(2);
@@ -225,8 +237,7 @@ public class GitRepositoryTest implements CommitFixture {
         assertThat(commitDetail.getFiles()).hasSize(1);
         CommitFile file = commitDetail.getFiles().get(0);
         assertBinaryState(file.getStateBefore(), "", "");
-        assertBinaryState(file.getStateAfter(), BINARY_FILENAME,
-                "Binary file content with MD5 checksum 75dae7103cb68ad5bfbf30b1a25565c7");
+        assertBinaryState(file.getStateAfter(), BINARY_FILENAME, "Binary file content with MD5 checksum 75dae7103cb68ad5bfbf30b1a25565c7");
     }
 
     @Test
@@ -239,16 +250,14 @@ public class GitRepositoryTest implements CommitFixture {
     public void commitWithParent_WithSameFile_HasParentContentBefore() throws Exception {
         Commit firstCommit = toCommit(git.createFileAndCommit());
         git.createFileAndCommit(COMMITTED_FILE_NAME, NEW_FILE_CONTENT);
-        pullAndAssertCommitDetail(firstCommit, COMMITTED_FILE_NAME, COMMITTED_FILE_CONTENT, COMMITTED_FILE_NAME,
-                NEW_FILE_CONTENT);
+        pullAndAssertCommitDetail(firstCommit, COMMITTED_FILE_NAME, COMMITTED_FILE_CONTENT, COMMITTED_FILE_NAME, NEW_FILE_CONTENT);
     }
 
     @Test
     public void commitWithParent_WithSameFileMoved_HasParentContentBefore() throws Exception {
         Commit firstCommit = toCommit(git.createFileAndCommit());
         git.createFileAndCommit(COMMITTED_FILE_NAME, NEW_FILE_CONTENT);
-        pullAndAssertCommitDetail(firstCommit, COMMITTED_FILE_NAME, COMMITTED_FILE_CONTENT, COMMITTED_FILE_NAME,
-                NEW_FILE_CONTENT);
+        pullAndAssertCommitDetail(firstCommit, COMMITTED_FILE_NAME, COMMITTED_FILE_CONTENT, COMMITTED_FILE_NAME, NEW_FILE_CONTENT);
     }
 
     @Test
@@ -257,8 +266,7 @@ public class GitRepositoryTest implements CommitFixture {
         git.moveFile(COMMITTED_FILE_NAME, NEW_FILE_NAME);
         git.removeFromIndex(COMMITTED_FILE_NAME);
         git.createCommitAndAdd(NEW_FILE_NAME);
-        pullAndAssertCommitDetail(parentCommit, COMMITTED_FILE_NAME, COMMITTED_FILE_CONTENT, NEW_FILE_NAME,
-                COMMITTED_FILE_CONTENT);
+        pullAndAssertCommitDetail(parentCommit, COMMITTED_FILE_NAME, COMMITTED_FILE_CONTENT, NEW_FILE_NAME, COMMITTED_FILE_CONTENT);
     }
 
     @Test
@@ -299,8 +307,8 @@ public class GitRepositoryTest implements CommitFixture {
         git.createFileAndCommit();
         git.createAndCheckout(NEW_BRANCH);
         git.createFileAndCommit();
-        repository = new GitRepository(repository().sourceUrl(git.getUrl()).build(), new File(
-                temporaryFolder.getRoot(), "otherRepository"), () -> PRIVATE_KEY_PASSWORD);
+        repository = new GitRepository(repository().sourceUrl(git.getUrl()).build(), new File(temporaryFolder.getRoot(), "otherRepository"),
+                () -> PRIVATE_KEY_PASSWORD);
         Collection<Commit> newCommits = pull();
         assertThat(newCommits).hasSize(2);
     }
@@ -308,18 +316,22 @@ public class GitRepositoryTest implements CommitFixture {
     @Test
     public void remoteRepository_WithPublicKey_CanBeConnected() throws Exception {
         repositoryMetadata = repository().sourceUrl("git@bitbucket.org:benromberg/integration-test.git")
-                .team(team().keyPair(new TeamKeyPair(PRIVATE_KEY, "public-key")).build()).build();
-        repository = new GitRepository(repositoryMetadata, new File(temporaryFolder.getRoot(), "newFolder"),
-                () -> PRIVATE_KEY_PASSWORD);
+                .team(team().keyPair(new TeamKeyPair(PRIVATE_KEY, "public-key")).build())
+                .build();
+        repository = new GitRepository(repositoryMetadata, new File(temporaryFolder.getRoot(), "newFolder"), () -> PRIVATE_KEY_PASSWORD);
     }
 
     @Test
     public void remoteRepository_WithPublicKey_CanBePulledFrom() throws Exception {
         repositoryMetadata = repository().sourceUrl("git@bitbucket.org:benromberg/integration-test.git")
-                .team(team().keyPair(new TeamKeyPair(PRIVATE_KEY, "public-key")).build()).build();
-        repository = new GitRepository(repositoryMetadata, new File(temporaryFolder.getRoot(), "newFolder"),
-                () -> PRIVATE_KEY_PASSWORD);
+                .team(team().keyPair(new TeamKeyPair(PRIVATE_KEY, "public-key")).build())
+                .build();
+        repository = new GitRepository(repositoryMetadata, new File(temporaryFolder.getRoot(), "newFolder"), () -> PRIVATE_KEY_PASSWORD);
         repository.pull(emptyList());
+    }
+
+    private void createIndexLockFile() throws IOException {
+        new File(new File(repositoryFolder, ".git"), "index.lock").createNewFile();
     }
 
     private List<Commit> pull(Commit... existingCommits) {
@@ -327,8 +339,7 @@ public class GitRepositoryTest implements CommitFixture {
     }
 
     private List<Commit> pull(List<Commit> existingCommits) {
-        return repository.pull(existingCommits).getNewCommits().stream().map(CommitWithRepository::getCommit)
-                .collect(toList());
+        return repository.pull(existingCommits).getNewCommits().stream().map(CommitWithRepository::getCommit).collect(toList());
     }
 
     private PullResult pullResult(List<Commit> existingCommits) {
@@ -339,29 +350,26 @@ public class GitRepositoryTest implements CommitFixture {
         return commit().id(commit.name()).build();
     }
 
-    private void pullAndAssertCommitDetail(Commit parentCommit, String pathBefore, String contentBefore,
-            String pathAfter, String contentAfter) {
+    private void pullAndAssertCommitDetail(Commit parentCommit, String pathBefore, String contentBefore, String pathAfter,
+            String contentAfter) {
         Collection<Commit> commits = pull(parentCommit);
         assertCommitDetail(commits.iterator().next(), pathBefore, contentBefore, pathAfter, contentAfter);
     }
 
-    private void pullAndAssertCommitDetail(String pathBefore, String contentBefore, String pathAfter,
-            String contentAfter) {
+    private void pullAndAssertCommitDetail(String pathBefore, String contentBefore, String pathAfter, String contentAfter) {
         Collection<Commit> commits = pull();
         assertThat(commits).hasSize(1);
         assertCommitDetail(commits.iterator().next(), pathBefore, contentBefore, pathAfter, contentAfter);
     }
 
-    private void assertCommitDetail(Commit commit, String pathBefore, String contentBefore, String pathAfter,
-            String contentAfter) {
+    private void assertCommitDetail(Commit commit, String pathBefore, String contentBefore, String pathAfter, String contentAfter) {
         CommitDetail commitDetail = repository.getCommitDetail(commit);
         assertThat(commitDetail.getCommit().getMessage()).isEqualTo(COMMIT_MESSAGE);
         assertThat(commitDetail.getFiles()).hasSize(1);
         assertCommitFile(commitDetail.getFiles().get(0), pathBefore, contentBefore, pathAfter, contentAfter);
     }
 
-    private void assertCommitFile(CommitFile commitFile, String pathBefore, String contentBefore, String pathAfter,
-            String contentAfter) {
+    private void assertCommitFile(CommitFile commitFile, String pathBefore, String contentBefore, String pathAfter, String contentAfter) {
         assertState(commitFile.getStateBefore(), pathBefore, contentBefore);
         assertState(commitFile.getStateAfter(), pathAfter, contentAfter);
     }
