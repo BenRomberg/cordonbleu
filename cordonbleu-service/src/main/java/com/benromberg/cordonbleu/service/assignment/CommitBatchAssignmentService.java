@@ -60,7 +60,9 @@ public class CommitBatchAssignmentService {
         }
 
         private boolean isEmailNotEqualTo(User user, String email) {
-            return !user.getEmail().equals(email) && !user.getEmailAliases().contains(email);
+            return !user.getEmail().equalsIgnoreCase(email) && user.getEmailAliases()
+                    .stream()
+                    .noneMatch(emailAlias -> emailAlias.equalsIgnoreCase(email));
         }
     }
 }
