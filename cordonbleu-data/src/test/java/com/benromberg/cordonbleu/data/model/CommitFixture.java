@@ -3,6 +3,7 @@ package com.benromberg.cordonbleu.data.model;
 import static java.util.Arrays.asList;
 import com.benromberg.cordonbleu.util.ClockService;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -68,7 +69,7 @@ public interface CommitFixture extends RepositoryFixture {
         }
 
         public Commit build() {
-            return new Commit(this.id, this.repositories, this.author, this.assignee, this.created, this.message);
+            return new Commit(this.id, this.repositories, this.author, this.assignee, this.created, this.message, LocalDateTime.now());
         }
     }
 }
