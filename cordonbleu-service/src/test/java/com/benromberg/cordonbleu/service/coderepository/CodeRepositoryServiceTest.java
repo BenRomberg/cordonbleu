@@ -29,8 +29,8 @@ import org.junit.rules.TemporaryFolder;
 public class CodeRepositoryServiceTest implements CommitFixture {
     private static final String OTHER_REPOSITORY_NAME = "other-repository";
     private static final CodeRepositoryMetadata OTHER_REPOSITORY = new RepositoryBuilder().name(OTHER_REPOSITORY_NAME).build();
-    private static final RawCommitFilter COMMIT_FILTER = new RawCommitFilter(asList(COMMIT_AUTHOR), asList(), true, Optional.empty(), 100,
-            Optional.empty());
+    private static final RawCommitFilter COMMIT_FILTER = new RawCommitFilter(asList(COMMIT_AUTHOR), asList(), true, Optional.empty(),
+            Optional.empty(), 100, Optional.empty());
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -100,7 +100,7 @@ public class CodeRepositoryServiceTest implements CommitFixture {
     @Test
     public void getCommitsForFilter_WithoutRepositories_ReturnsEmptyList() throws Exception {
         List<Commit> commits = service.getCommitsForFilter(
-                new RawCommitFilter(asList(COMMIT_AUTHOR), asList(), true, Optional.empty(), 100, Optional.empty()), asList());
+                new RawCommitFilter(asList(COMMIT_AUTHOR), asList(), true, Optional.empty(), Optional.empty(), 100, Optional.empty()), asList());
         assertThat(commits).isEmpty();
     }
 

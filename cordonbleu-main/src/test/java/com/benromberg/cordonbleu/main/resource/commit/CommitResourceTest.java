@@ -474,7 +474,7 @@ public class CommitResourceTest implements CommitFixture {
 
     private CommitListRequest createListRequest(String repositoryId, boolean onlyAssignedToMe) {
         return new CommitListRequest(asList(repositoryId), asList(new CommitAuthorRequest(COMMIT_AUTHOR_NAME,
-                COMMIT_AUTHOR_EMAIL)), asList(), true, onlyAssignedToMe, Optional.empty(), LIMIT);
+                COMMIT_AUTHOR_EMAIL)), asList(), true, onlyAssignedToMe, Optional.empty(), Optional.empty(), LIMIT);
     }
 
     private List<ReadCommitListItemResponse> getCommitsFromResponse(Response response) {

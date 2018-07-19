@@ -103,6 +103,10 @@ public class MongoDao<I, E extends Entity<I>> implements ReferenceResolver<I, E>
         return collection.count();
     }
 
+    protected long getCount(DBQuery.Query query) {
+        return collection.getCount(query);
+    }
+
     @Override
     public Optional<E> findById(I id) {
         return Optional.ofNullable(collection.findOneById(id));

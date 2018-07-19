@@ -32,24 +32,28 @@ public class CommitListRequest {
     private final Optional<String> lastCommitHash;
 
     @JsonProperty
+    private final Optional<String> fetchedAfterCommitHash;
+
+    @JsonProperty
     private final int limit;
 
     @JsonCreator
     public CommitListRequest(List<String> repository, List<CommitAuthorRequest> author, List<String> user,
-            boolean approved, boolean onlyAssignedToMe, Optional<String> lastCommitHash, int limit) {
+            boolean approved, boolean onlyAssignedToMe, Optional<String> lastCommitHash, Optional<String> fetchedAfterCommitHash, int limit) {
         this.repository = repository;
         this.author = author;
         this.user = user;
         this.approved = approved;
         this.onlyAssignedToMe = onlyAssignedToMe;
         this.lastCommitHash = lastCommitHash;
+        this.fetchedAfterCommitHash = fetchedAfterCommitHash;
         this.limit = limit;
     }
 
     public RawCommitFilter toFilterFor(UserWithPermissions requestUser) {
         Optional<User> assignedTo = requestUser.isKnown() && onlyAssignedToMe ? Optional.of(requestUser.getUser()) : Optional.empty();
         return new RawCommitFilter(author.stream().map(CommitAuthorRequest::toAuthor).collect(toList()), user, approved,
-                lastCommitHash, limit, assignedTo);
+                lastCommitHash, fetchedAfterCommitHash, limit, assignedTo);
     }
 
     public List<String> getRepositories() {

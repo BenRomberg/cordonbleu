@@ -32,6 +32,7 @@ public interface CommitFixture extends RepositoryFixture {
         private LocalDateTime created = COMMIT_CREATED;
         private String message = COMMIT_MESSAGE;
         private Optional<User> assignee = Optional.empty();
+        private Optional<LocalDateTime> fetchedAt = Optional.empty();
 
         public CommitBuilder id(CommitId id) {
             this.id = id;
@@ -68,8 +69,13 @@ public interface CommitFixture extends RepositoryFixture {
             return this;
         }
 
+        public CommitBuilder fetchedAt(LocalDateTime fetchedAt) {
+            this.fetchedAt = Optional.of(fetchedAt);
+            return this;
+        }
+
         public Commit build() {
-            return new Commit(this.id, this.repositories, this.author, this.assignee, this.created, this.message, LocalDateTime.now());
+            return new Commit(this.id, this.repositories, this.author, this.assignee, this.created, this.message, this.fetchedAt.orElse(LocalDateTime.now()));
         }
     }
 }

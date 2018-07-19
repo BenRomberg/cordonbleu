@@ -301,6 +301,21 @@ public class CommitDaoTest implements CommitFixture, CommentFixture {
     }
 
     @Test
+    public void countByFilter_AppliesFilter() throws Exception {
+        LocalDateTime sampleTime = LocalDateTime.now();
+        Commit firstFetched = new CommitBuilder().fetchedAt(sampleTime).build();
+        Commit secondFetched = new CommitBuilder().id("second").fetchedAt(sampleTime.plusHours(1)).build();
+        Commit thirdFetched = new CommitBuilder().id("third").fetchedAt(sampleTime.plusHours(2)).build();
+        dao.insert(firstFetched);
+        dao.insert(secondFetched);
+        dao.insert(thirdFetched);
+
+        assertThat(dao.countByFilter(createFilterFetchedAfter(firstFetched.getId().getHash()))).isEqualTo(2);
+        assertThat(dao.countByFilter(createFilterFetchedAfter(secondFetched.getId().getHash()))).isEqualTo(1);
+        assertThat(dao.countByFilter(createFilterFetchedAfter(thirdFetched.getId().getHash()))).isEqualTo(0);
+    }
+
+    @Test
     public void updateAsRemoved_WithoutCommit_ReturnsEmpty() throws Exception {
         Optional<Commit> commit = dao.updateAsRemoved(new CommitId("non-existing-hash", TEAM));
         assertThat(commit).isEmpty();
@@ -613,19 +628,23 @@ public class CommitDaoTest implements CommitFixture, CommentFixture {
     }
 
     private CommitFilter createFilter(CodeRepositoryMetadata repository, CommitAuthor author, boolean approved) {
-        return new CommitFilter(TEAM, asList(repository), asList(author), asList(), approved, Optional.empty(), 100, Optional.empty());
+        return new CommitFilter(TEAM, asList(repository), asList(author), asList(), approved, Optional.empty(), Optional.empty(), 100, Optional.empty());
     }
 
     private CommitFilter createFilter(CodeRepositoryMetadata repository, Optional<User> assignee) {
-        return new CommitFilter(TEAM, asList(repository), asList(COMMIT_AUTHOR), asList(), true, Optional.empty(), 100, assignee);
+        return new CommitFilter(TEAM, asList(repository), asList(COMMIT_AUTHOR), asList(), true, Optional.empty(), Optional.empty(),100, assignee);
     }
 
     private CommitFilter createFilter(CodeRepositoryMetadata repository, User user, boolean approved) {
-        return new CommitFilter(TEAM, asList(repository), asList(), asList(user), approved, Optional.empty(), 100, Optional.empty());
+        return new CommitFilter(TEAM, asList(repository), asList(), asList(user), approved, Optional.empty(), Optional.empty(), 100, Optional.empty());
     }
 
     private CommitFilter createFilter(Optional<String> lastCommitId, int limit) {
-        return new CommitFilter(TEAM, asList(REPOSITORY), asList(COMMIT_AUTHOR), asList(), true, lastCommitId, limit, Optional.empty());
+        return new CommitFilter(TEAM, asList(REPOSITORY), asList(COMMIT_AUTHOR), asList(), true, lastCommitId, Optional.empty(), limit, Optional.empty());
+    }
+
+    private CommitFilter createFilterFetchedAfter(String fetchedAfterHash) {
+        return new CommitFilter(TEAM, asList(REPOSITORY), asList(COMMIT_AUTHOR), asList(), true, Optional.empty(), Optional.of(fetchedAfterHash), 100, Optional.empty());
     }
 
     private Commit insertWithComment(Commit dummyElement) {
