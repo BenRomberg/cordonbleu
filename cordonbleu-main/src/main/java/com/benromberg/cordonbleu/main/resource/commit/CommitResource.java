@@ -71,10 +71,17 @@ public class CommitResource {
     @Timed
     public List<CommitListItemResponse> getCommits(@Auth(required = false) UserWithPermissions user,
             CommitListRequest request) {
-        List<CodeRepositoryMetadata> repositories = commitPermissionGuard.guardListCommits(user,
-                request.getRepositories());
+        List<CodeRepositoryMetadata> repositories = commitPermissionGuard.guardListCommits(user, request.getRepositories());
         List<Commit> commits = codeRepositoryService.getCommitsForFilter(request.toFilterFor(user), repositories);
         return commits.stream().map(commit -> new CommitListItemResponse(commit)).collect(toList());
+    }
+
+    @POST
+    @Path("/count")
+    @Timed
+    public long countCommits(@Auth(required = false) UserWithPermissions user, CommitListRequest request) {
+        List<CodeRepositoryMetadata> repositories = commitPermissionGuard.guardListCommits(user, request.getRepositories());
+        return codeRepositoryService.countCommitsForFilter(request.toFilterFor(user), repositories);
     }
 
     @GET
