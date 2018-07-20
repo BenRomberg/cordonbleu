@@ -164,7 +164,7 @@ public class CommitDao extends MongoDao<CommitId, Commit> {
         }
         if (commitFilter.getFetchAfterCommitHash().isPresent()) {
             Optional<Commit> fetchAfterCommit = findById(new CommitId(commitFilter.getFetchAfterCommitHash().get(), commitFilter.getTeam()));
-            if(fetchAfterCommit.isPresent() && fetchAfterCommit.get().getFetchedAt().isPresent()) {
+            if(fetchAfterCommit.isPresent()) {
                 query = query.and(DBQuery.greaterThan(SORT_PROPERTY_FETCHED_AT, fetchAfterCommit.get().getFetchedAt()));
             }
         }
