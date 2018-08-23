@@ -145,9 +145,8 @@ module.exports = {
     this.setupMultiselect('#author-dropdown', 'Authors')
 
     this.runInInterval('commitListRefresh', 60, () => {
-      this.fetchList(data => {
-        this.commits = this.commits.map(commit => data.find(newCommit => newCommit.hash === commit.hash) || commit)
-        this.refreshCount = data.filter(commit => !this.commits.some(existingCommit => existingCommit.hash === commit.hash)).length
+      this.countFetchSinceLastCommit(data => {
+        this.refreshCount = data
       }, true, this.commits.length + this.refreshCount, true)
     })
     this.initializeList(this.activeTeam.filters)
@@ -251,21 +250,29 @@ module.exports = {
       this.fetchList(data => this.commits.push.apply(this.commits, data))
     },
     fetchList: function(callback, fetchUpdates, limit, hide) {
+      this.ajaxPost('/commit/list', this.buildCommitRequest(fetchUpdates, limit, false), data => {
+        callback(data)
+        DomHelper.waitForElement('commit-list-container', this.endlessScrolling.scroll)
+      }, {}, hide)
+    },
+    countFetchSinceLastCommit: function(callback) {
+      this.ajaxPost('/commit/count', this.buildCommitRequest(true, this.commits.length + this.refreshCount, true), data => {
+        callback(data)
+      }, {}, true)
+    },
+    buildCommitRequest: function(fetchUpdates, limit, onlyFetchedAfterLastCommit) {
       var optionToFilter = selector => ($(selector).val() || []).map(serializedValue => JSON.parse(serializedValue))
       var authorAllOptions = optionToFilter("#author-dropdown")
-      var commitListData = {
+      return {
         repository: optionToFilter("#repository-dropdown"),
         author: authorAllOptions.filter(author => typeof author === 'object'),
         user: authorAllOptions.filter(author => typeof author === 'string'),
         approved: this.showApproved,
         onlyAssignedToMe: this.onlyAssignedToMe,
         lastCommitHash: this.commits.length == 0 || fetchUpdates ? null : this.commits[this.commits.length - 1].hash,
+        fetchedAfterCommitHash: onlyFetchedAfterLastCommit && this.commits.length > 0 ? this.commits[0].hash : null,
         limit: limit || LIMIT
       }
-      this.ajaxPost('/commit/list', commitListData, data => {
-        callback(data)
-        DomHelper.waitForElement('commit-list-container', this.endlessScrolling.scroll)
-      }, {}, hide)
     }
   },
   events: {

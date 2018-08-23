@@ -170,7 +170,8 @@ public class GitRepository implements CodeRepository, AutoCloseable {
         CommitId commitId = new CommitId(commit.getName(), repositoryMetadata.getTeam());
         return new CommitWithRepository(new Commit(commitId, asList(commitRepository),
                 new CommitAuthor(commit.getAuthorIdent().getName(), commit.getAuthorIdent().getEmailAddress()), Optional.empty(),
-                LocalDateTime.ofEpochSecond(commit.getCommitTime(), 0, ZoneOffset.UTC), commit.getFullMessage()), commitRepository);
+                LocalDateTime.ofEpochSecond(commit.getCommitTime(), 0, ZoneOffset.UTC), commit.getFullMessage(), ClockService.now()),
+                commitRepository);
     }
 
     private List<Ref> getRemoteBranchReferences() {

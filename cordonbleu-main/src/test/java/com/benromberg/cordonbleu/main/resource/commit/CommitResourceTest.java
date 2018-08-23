@@ -104,6 +104,37 @@ public class CommitResourceTest implements CommitFixture {
     }
 
     @Test
+    public void countPrivateTeam_WithoutBeingLoggedIn_YieldsNotFound() throws Exception {
+        teamDao.updateFlag(TEAM_ID, TeamFlag.PRIVATE, true);
+        Response response = RULE.post("/api/commit/count", createListRequest(REPOSITORY_ID));
+        assertThat(response.getStatus()).isEqualTo(Status.NOT_FOUND.getStatusCode());
+    }
+
+    @Test
+    public void countPrivateTeam_WithLoggedInUser_YieldsNotFound() throws Exception {
+        teamDao.updateFlag(TEAM_ID, TeamFlag.PRIVATE, true);
+        Response response = RULE.withAuthenticatedUser().post("/api/commit/count", createListRequest(REPOSITORY_ID));
+        assertThat(response.getStatus()).isEqualTo(Status.NOT_FOUND.getStatusCode());
+    }
+
+    @Test
+    public void countPrivateTeam_WithTeamMember_ReturnsCount() throws Exception {
+        commitDao.insert(COMMIT);
+        teamDao.updateFlag(TEAM_ID, TeamFlag.PRIVATE, true);
+        Response response = RULE.withTeamUser().post("/api/commit/count", createListRequest(REPOSITORY_ID));
+        assertThat(response.getStatus()).isEqualTo(Status.OK.getStatusCode());
+        assertThat(response.readEntity(Long.class)).isEqualTo(1L);
+    }
+
+    @Test
+    public void countPrivateTeam_WithoutCommits_ReturnsZero() throws Exception {
+        teamDao.updateFlag(TEAM_ID, TeamFlag.PRIVATE, true);
+        Response response = RULE.withTeamUser().post("/api/commit/count", createListRequest(REPOSITORY_ID));
+        assertThat(response.getStatus()).isEqualTo(Status.OK.getStatusCode());
+        assertThat(response.readEntity(Long.class)).isEqualTo(0L);
+    }
+
+    @Test
     public void commitDetailPrivateTeam_WithLoggedInUser_YieldsNotFound() throws Exception {
         commitDao.insert(COMMIT);
         teamDao.updateFlag(TEAM_ID, TeamFlag.PRIVATE, true);
@@ -474,7 +505,7 @@ public class CommitResourceTest implements CommitFixture {
 
     private CommitListRequest createListRequest(String repositoryId, boolean onlyAssignedToMe) {
         return new CommitListRequest(asList(repositoryId), asList(new CommitAuthorRequest(COMMIT_AUTHOR_NAME,
-                COMMIT_AUTHOR_EMAIL)), asList(), true, onlyAssignedToMe, Optional.empty(), LIMIT);
+                COMMIT_AUTHOR_EMAIL)), asList(), true, onlyAssignedToMe, Optional.empty(), Optional.empty(), LIMIT);
     }
 
     private List<ReadCommitListItemResponse> getCommitsFromResponse(Response response) {

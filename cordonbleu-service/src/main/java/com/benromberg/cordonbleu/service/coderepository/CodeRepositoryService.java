@@ -86,6 +86,15 @@ public class CodeRepositoryService {
         return commitDao.findByFilter(commitFilter.toCommitFilter(team, repositories, users));
     }
 
+    public long countCommitsForFilter(RawCommitFilter commitFilter, List<CodeRepositoryMetadata> repositories) {
+        List<User> users = userDao.findByIds(commitFilter.getUserIds());
+        if (repositories.isEmpty()) {
+            return 0;
+        }
+        Team team = repositories.get(0).getTeam();
+        return commitDao.countByFilter(commitFilter.toCommitFilter(team, repositories, users));
+    }
+
     public List<CodeRepositoryMetadata> findRepositories(List<String> repositories) {
         return repositoryDao.findByIds(repositories);
     }

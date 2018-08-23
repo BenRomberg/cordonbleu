@@ -34,9 +34,10 @@ public class CommitBatchAssignmentServiceTest implements CommitFixture {
     private static final User USER_2 = new User("user-two-email", "commit-two-user", "password-two");
     private static final User USER_3 = new User("user-three-email", "commit-three-user", "password-three");
 
-    private static final User USER_COMMIT_AUTHOR_1 = new User(COMMIT_AUTHOR_1.getEmail(), "commit-author-1-user", "password-four");
+    private static final User USER_COMMIT_AUTHOR_1 = new User(COMMIT_AUTHOR_1.getEmail().toUpperCase(), "commit-author-1-user",
+            "password-four");
     private static final User USER_COMMIT_AUTHOR_2_ALIAS = new User("some-email", "commit-author-1-user", "password-four",
-            Arrays.asList("again-some-email", COMMIT_AUTHOR_2.getEmail()));
+            Arrays.asList("again-some-email", COMMIT_AUTHOR_2.getEmail().toUpperCase()));
 
     private final CommitBatchAssignmentService service = new CommitBatchAssignmentService();
 
