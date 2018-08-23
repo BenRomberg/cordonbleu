@@ -30,7 +30,7 @@ import com.ibm.icu.text.CharsetDetector;
 public class GitCommitDetail {
     private static final int BINARY_FILE_CONTROL_CHARACTER_FACTOR = 100;
     private static final String BINARY_FILE_REPLACEMENT = "Binary file content with MD5 checksum %s";
-    private static final int BINARY_ANALYSIS_LIMIT = 100000;
+    private static final int BINARY_ANALYSIS_LIMIT = 100_000_000;
 
     private final Repository repository;
 
