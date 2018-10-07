@@ -2,6 +2,7 @@ package com.benromberg.cordonbleu.data.dao;
 
 import static com.benromberg.cordonbleu.data.model.Commit.AUTHOR_PROPERTY;
 import static com.benromberg.cordonbleu.data.model.Commit.REPOSITORIES_PROPERTY;
+import static com.benromberg.cordonbleu.data.model.Commit.CREATED_PROPERTY;
 import static com.benromberg.cordonbleu.data.model.CommitRepository.REPOSITORY_PROPERTY;
 import static com.benromberg.cordonbleu.data.util.jackson.CaseInsensitiveUniqueValue.uniqueProperty;
 import static com.benromberg.cordonbleu.data.util.jackson.CaseInsensitiveUniqueValue.uniqueValue;
@@ -11,6 +12,7 @@ import static java.util.stream.Collectors.toList;
 import static org.mongojack.Aggregation.Expression.path;
 import com.benromberg.cordonbleu.util.CollectionUtil;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,11 +53,13 @@ public class CommitDao extends MongoDao<CommitId, Commit> {
 
     private static final String SORT_PROPERTY_HASH = ID_PROPERTY + "." + CommitId.HASH_PROPERTY;
     private static final String SORT_PROPERTY_CREATED = Commit.CREATED_PROPERTY;
+    private static final String SORT_PROPERTY_FETCHED_AT = Commit.FETCHED_AT_PROPERTY;
 
     @Inject
     public CommitDao(DatabaseWithMigration db, CodeRepositoryMetadataDao repositoryDao, UserDao userDao, TeamDao teamDao) {
         super(db, CommitId.class, Commit.class, COLLECTION_NAME, createCustomModule(repositoryDao, userDao, teamDao));
         createIndex(REPOSITORIES_PROPERTY + "." + REPOSITORY_PROPERTY);
+        createIndex(CREATED_PROPERTY);
     }
 
     private static CustomModule createCustomModule(CodeRepositoryMetadataDao repositoryDao, UserDao userDao,
@@ -88,6 +92,10 @@ public class CommitDao extends MongoDao<CommitId, Commit> {
 
     public Optional<Commit> updateApproval(CommitId id, Optional<CommitApproval> approval) {
         return update(id, DBUpdate.set(Commit.APPROVAL_PROPERTY, approval));
+    }
+
+    public Optional<Commit> updateAssignee(CommitId id, Optional<User> assignee) {
+        return update(id, DBUpdate.set(Commit.ASSIGNEE_PROPERTY, assignee));
     }
 
     public Optional<Commit> updateComment(CommitId commitId, String commentId, String text) {
@@ -124,6 +132,14 @@ public class CommitDao extends MongoDao<CommitId, Commit> {
     }
 
     public List<Commit> findByFilter(CommitFilter commitFilter) {
+        return findAndSort(buildQuery(commitFilter)).limit(commitFilter.getLimit()).toArray();
+    }
+
+    public long countByFilter(CommitFilter commitFilter) {
+        return getCount(buildQuery(commitFilter));
+    }
+
+    private DBQuery.Query buildQuery(CommitFilter commitFilter) {
         List<String> userAndAuthorEmails = collectUniqueUserEmails(commitFilter.getUsers());
         userAndAuthorEmails.addAll(commitFilter.getAuthors().stream().map(author -> uniqueValue(author.getEmail()))
                 .collect(toList()));
@@ -143,7 +159,24 @@ public class CommitDao extends MongoDao<CommitId, Commit> {
         if (!commitFilter.isApproved()) {
             query = query.and(DBQuery.is(Commit.APPROVAL_PROPERTY, convertToDbObject(Optional.empty())));
         }
-        return findAndSort(query).limit(commitFilter.getLimit()).toArray();
+        if (commitFilter.getAssignedTo().isPresent()) {
+            query = query.and(DBQuery.is(Commit.ASSIGNEE_PROPERTY, commitFilter.getAssignedTo()));
+        }
+        if (commitFilter.getFetchAfterCommitHash().isPresent()) {
+            Optional<Commit> fetchAfterCommit = findById(new CommitId(commitFilter.getFetchAfterCommitHash().get(), commitFilter.getTeam()));
+            if(fetchAfterCommit.isPresent()) {
+                query = query.and(DBQuery.greaterThan(SORT_PROPERTY_FETCHED_AT, fetchAfterCommit.get().getFetchedAt()));
+            }
+        }
+        return query;
+    }
+
+    public List<Commit> findNonAssignedNonApproved(Team team, LocalDateTime createdAfter, int limit) {
+        Query teamIdQuery = DBQuery.is(ID_PROPERTY + "." + CommitId.TEAM_PROPERTY, team);
+        Query noApprovalQuery = DBQuery.is(Commit.ASSIGNEE_PROPERTY, null);
+        Query noAssigneeQuery = DBQuery.is(Commit.APPROVAL_PROPERTY, null);
+        Query createdAfterQuery = DBQuery.greaterThan(Commit.CREATED_PROPERTY, createdAfter);
+        return find(DBQuery.and(teamIdQuery, noApprovalQuery, noAssigneeQuery, createdAfterQuery)).limit(limit).toArray();
     }
 
     private List<String> collectUniqueUserEmails(List<User> users) {

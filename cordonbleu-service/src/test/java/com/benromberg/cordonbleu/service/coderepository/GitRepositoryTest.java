@@ -108,6 +108,14 @@ public class GitRepositoryTest implements CommitFixture {
     }
 
     @Test
+    public void pullCommit_fetchedAtInstantIsSet() throws Exception {
+        git.createFileAndCommit();
+        Collection<Commit> commits = pull();
+        assertThat(commits).hasSize(1);
+        assertThat(commits.iterator().next().getFetchedAt()).hasValue(systemTimeRule.getDateTime());
+    }
+
+    @Test
     @SuppressWarnings("unchecked")
     public void repository_WithCommitMergedToMultipleBranches_ShowsAllRelevantBranches() throws Exception {
         git.createFileAndCommit();

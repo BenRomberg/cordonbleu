@@ -46,6 +46,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -168,8 +169,9 @@ public class GitRepository implements CodeRepository, AutoCloseable {
         CommitRepository commitRepository = new CommitRepository(repositoryMetadata, getBranchesForCommit(commit));
         CommitId commitId = new CommitId(commit.getName(), repositoryMetadata.getTeam());
         return new CommitWithRepository(new Commit(commitId, asList(commitRepository),
-                new CommitAuthor(commit.getAuthorIdent().getName(), commit.getAuthorIdent().getEmailAddress()),
-                LocalDateTime.ofEpochSecond(commit.getCommitTime(), 0, ZoneOffset.UTC), commit.getFullMessage()), commitRepository);
+                new CommitAuthor(commit.getAuthorIdent().getName(), commit.getAuthorIdent().getEmailAddress()), Optional.empty(),
+                LocalDateTime.ofEpochSecond(commit.getCommitTime(), 0, ZoneOffset.UTC), commit.getFullMessage(), ClockService.now()),
+                commitRepository);
     }
 
     private List<Ref> getRemoteBranchReferences() {

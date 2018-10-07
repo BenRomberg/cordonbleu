@@ -1,0 +1,33 @@
+subject(commit, assignedBy, commitPath) ::= "$assignedBy.name$ assigned a commit to you"
+
+plainBody(commit, assignedBy, commitPath) ::= <<
+* Repositories $commit.repositories:plainRepository(); separator="; "$
+* commit $commitPath$
+* by $commit.author.name$ on $commit.created$
+
+$commit.message$
+
+===
+The commit $commit.id.hash$ was assigned to you by $assignedBy.name$.
+===
+
+>>
+
+plainRepository(repository) ::= <<
+$repository.repository.name$ ($repository.branches; separator=", "$)
+>>
+
+htmlBody(commit, assignedBy, commitPath) ::= <<
+<ul>
+<li>Repositories $commit.repositories:htmlRepository(); separator="; "$</li>
+<li>Commit <a href="$commitPath$"><b>$commit.id.hash$</b></a></li>
+<li>By <b>$commit.author.name$</b> on <b>$commit.created$</b></li>
+</ul>
+<pre>$commit.message$</pre>
+
+<p>The commit <a href="$commitPath$"><b>$commit.id.hash$</b></a> was assigned to you by $assignedBy.name$.</p>
+>>
+
+htmlRepository(repository) ::= <<
+<b>$repository.repository.name$</b> ($repository.branches; separator=", "$)
+>>

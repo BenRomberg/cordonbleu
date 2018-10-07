@@ -14,13 +14,15 @@ public class CommitDetailResponse {
     private final HighlightedCommit commit;
     private final List<CommitFileResponse> files;
     private final Optional<CommitApprovalResponse> approval;
+    private final Optional<CommitAssignmentResponse> assignment;
     private final CommitAuthorResponse author;
     private final List<CommitRepositoryResponse> repositories;
 
     public CommitDetailResponse(HighlightedCommit commit, List<CommitFileResponse> files) {
         this.commit = commit;
         this.files = files;
-        approval = commit.getApproval().map(commitApproval -> new CommitApprovalResponse(commitApproval));
+        approval = commit.getApproval().map(CommitApprovalResponse::new);
+        assignment = commit.getAssignee().map(CommitAssignmentResponse::new);
         author = new CommitAuthorResponse(commit.getAuthor());
         repositories = commit.getRepositories().stream().map(CommitRepositoryResponse::new).collect(toList());
     }
@@ -53,6 +55,11 @@ public class CommitDetailResponse {
     @JsonProperty
     public Optional<CommitApprovalResponse> getApproval() {
         return approval;
+    }
+
+    @JsonProperty
+    public Optional<CommitAssignmentResponse> getAssignment() {
+        return assignment;
     }
 
     @JsonProperty

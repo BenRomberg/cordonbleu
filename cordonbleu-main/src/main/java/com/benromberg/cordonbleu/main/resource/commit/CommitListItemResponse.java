@@ -1,13 +1,14 @@
 package com.benromberg.cordonbleu.main.resource.commit;
 
-import static java.util.stream.Collectors.toList;
 import com.benromberg.cordonbleu.data.model.Commit;
+import com.benromberg.cordonbleu.main.resource.team.CommitAuthorResponse;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
-import com.benromberg.cordonbleu.main.resource.team.CommitAuthorResponse;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import static java.util.stream.Collectors.toList;
 
 public class CommitListItemResponse {
     private final Commit commit;
@@ -24,6 +25,11 @@ public class CommitListItemResponse {
     @JsonProperty
     public CommitAuthorResponse getAuthor() {
         return author;
+    }
+
+    @JsonProperty
+    public Optional<CommitAssignmentResponse> getAssignment() {
+        return commit.getAssignee().map(CommitAssignmentResponse::new);
     }
 
     @JsonProperty

@@ -20,11 +20,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import com.benromberg.cordonbleu.data.dao.CodeRepositoryMetadataDao;
-import com.benromberg.cordonbleu.data.dao.CommitDao;
-import com.benromberg.cordonbleu.data.dao.CommitFilter;
-import com.benromberg.cordonbleu.data.dao.TeamDao;
-import com.benromberg.cordonbleu.data.dao.UserDao;
 import com.benromberg.cordonbleu.data.model.CodeRepositoryMetadata;
 import com.benromberg.cordonbleu.data.model.Comment;
 import com.benromberg.cordonbleu.data.model.Commit;
@@ -46,12 +41,15 @@ public class CommitDaoTest implements CommitFixture, CommentFixture {
     private static final String UPPERCASE_AUTHOR = "Uppercase Author";
     private static final String OTHER_TEXT = "other text";
     private static final LocalDateTime COMMIT_APPROVAL_TIME = LocalDateTime.now();
+    private static final LocalDateTime COMMIT_CREATION_TIME = LocalDateTime.now();
     private static final String OTHER_COMMIT_HASH = "other commit hash";
     private static final List<String> OTHER_COMMIT_BRANCHES = asList("other commit branch");
     private static final CodeRepositoryMetadata OTHER_REPOSITORY = new RepositoryBuilder().name(OTHER_REPOSITORY_NAME)
             .build();
     private static final User COMMIT_APPROVER = new User(COMMIT_APPROVER_EMAIL, COMMIT_APPROVER_NAME,
             "approver password");
+    private static final User COMMIT_ASSIGNEE = new User("assignee@email.com", "JackAssignee",
+            "assignee password");
 
     @Rule
     public SystemTimeRule systemTimeRule = new SystemTimeRule();
@@ -70,6 +68,7 @@ public class CommitDaoTest implements CommitFixture, CommentFixture {
     @Before
     public void setUp() {
         userDao.insert(COMMIT_APPROVER);
+        userDao.insert(COMMIT_ASSIGNEE);
     }
 
     @Test
@@ -158,6 +157,27 @@ public class CommitDaoTest implements CommitFixture, CommentFixture {
         dao.insert(dummyElement);
         List<Commit> foundCommits = dao.findByFilter(createFilter(REPOSITORY, dummyElement.getAuthor(), true));
         assertThat(foundCommits).extracting(Commit::getId).containsExactly(COMMIT_ID);
+    }
+
+    @Test
+    public void findByFilter_ReturnsCommitsAssignedToAssignee() throws Exception {
+        Commit dummyElement = new CommitBuilder().assignee(COMMIT_ASSIGNEE).build();
+        dao.insert(dummyElement);
+        List<Commit> foundCommits = dao.findByFilter(createFilter(REPOSITORY, dummyElement.getAssignee()));
+        assertThat(foundCommits).extracting(Commit::getId).containsExactly(COMMIT_ID);
+    }
+
+    @Test
+    public void findByFilter_WithAssigneeSet_DoesNotReturnCommitsWithNoAssignee() throws Exception {
+        dao.insert(COMMIT);
+        assertThat(dao.findByFilter(createFilter(REPOSITORY, Optional.of(COMMIT_ASSIGNEE)))).isEmpty();
+    }
+
+    @Test
+    public void findByFilter_WithAssigneeSet_DoesNotReturnCommitsAssignedToOthers() throws Exception {
+        Commit commitAssignedToAnother = new CommitBuilder().assignee(COMMIT_USER).build();
+        dao.insert(commitAssignedToAnother);
+        assertThat(dao.findByFilter(createFilter(REPOSITORY, Optional.of(COMMIT_ASSIGNEE)))).isEmpty();
     }
 
     @Test
@@ -281,6 +301,21 @@ public class CommitDaoTest implements CommitFixture, CommentFixture {
     }
 
     @Test
+    public void countByFilter_AppliesFilter() throws Exception {
+        LocalDateTime sampleTime = LocalDateTime.now();
+        Commit firstFetched = new CommitBuilder().fetchedAt(sampleTime).build();
+        Commit secondFetched = new CommitBuilder().id("second").fetchedAt(sampleTime.plusHours(1)).build();
+        Commit thirdFetched = new CommitBuilder().id("third").fetchedAt(sampleTime.plusHours(2)).build();
+        dao.insert(firstFetched);
+        dao.insert(secondFetched);
+        dao.insert(thirdFetched);
+
+        assertThat(dao.countByFilter(createFilterFetchedAfter(firstFetched.getId().getHash()))).isEqualTo(2);
+        assertThat(dao.countByFilter(createFilterFetchedAfter(secondFetched.getId().getHash()))).isEqualTo(1);
+        assertThat(dao.countByFilter(createFilterFetchedAfter(thirdFetched.getId().getHash()))).isEqualTo(0);
+    }
+
+    @Test
     public void updateAsRemoved_WithoutCommit_ReturnsEmpty() throws Exception {
         Optional<Commit> commit = dao.updateAsRemoved(new CommitId("non-existing-hash", TEAM));
         assertThat(commit).isEmpty();
@@ -321,6 +356,25 @@ public class CommitDaoTest implements CommitFixture, CommentFixture {
         dao.updateApproval(dummyElement.getId(), Optional.empty());
         Optional<CommitApproval> approval = dao.findById(dummyElement.getId()).get().getApproval();
         assertThat(approval).isEqualTo(Optional.empty());
+    }
+
+    @Test
+    public void setAssigneeAndFindCommit_AssigneeIsSet() throws Exception {
+        Commit dummyElement = COMMIT;
+        dao.insert(dummyElement);
+        dao.updateAssignee(dummyElement.getId(), Optional.of(COMMIT_ASSIGNEE));
+
+        assertThat(dao.findById(dummyElement.getId()).get().getAssignee().get()).isEqualToComparingFieldByField(COMMIT_ASSIGNEE);
+    }
+
+    @Test
+    public void removeAssigneeAndFindCommit_AssigneeIsNotSet() throws Exception {
+        Commit dummyElement = COMMIT;
+        dao.insert(dummyElement);
+        dao.updateAssignee(dummyElement.getId(), Optional.of(COMMIT_ASSIGNEE));
+        dao.updateAssignee(dummyElement.getId(), Optional.empty());
+
+        assertThat(dao.findById(dummyElement.getId()).get().getAssignee()).isEmpty();
     }
 
     @Test
@@ -508,6 +562,55 @@ public class CommitDaoTest implements CommitFixture, CommentFixture {
         assertThat(notifications).extracting(Commit::getId).containsExactly(otherCommit.getId());
     }
 
+    @Test
+    public void findNonAssignedNonApproved_CommitFromAnotherTeamIsNotReturned() throws Exception {
+        dao.insert(new CommitBuilder().created(COMMIT_CREATION_TIME).build());
+        assertThat(dao.findNonAssignedNonApproved(OTHER_TEAM, COMMIT_CREATION_TIME.minusSeconds(10), 10)).isEmpty();
+    }
+
+    @Test
+    public void findNonAssignedNonApproved_CommitWithAssigneeIsNotReturned() throws Exception {
+        dao.insert(new CommitBuilder().created(COMMIT_CREATION_TIME).assignee(COMMIT_ASSIGNEE).build());
+        assertThat(dao.findNonAssignedNonApproved(TEAM, COMMIT_CREATION_TIME.minusSeconds(10), 10)).isEmpty();
+    }
+
+    @Test
+    public void findNonAssignedNonApproved_CommitWithApprovalIsNotReturned() throws Exception {
+        Commit dummyElement = new CommitBuilder().created(COMMIT_CREATION_TIME).build();
+        dao.insert(dummyElement);
+        dao.updateApproval(dummyElement.getId(), Optional.of(new CommitApproval(COMMIT_APPROVER, COMMIT_APPROVAL_TIME)));
+        assertThat(dao.findNonAssignedNonApproved(TEAM, COMMIT_CREATION_TIME.minusSeconds(10), 10)).isEmpty();
+    }
+
+    @Test
+    public void findNonAssignedNonApproved_CommitEarlierThanSpecifiedDateIsNotReturned() throws Exception {
+        Commit dummyElement = new CommitBuilder().created(COMMIT_CREATION_TIME).build();
+        dao.insert(dummyElement);
+        assertThat(dao.findNonAssignedNonApproved(TEAM, dummyElement.getCreated(), 10)).isEmpty();
+        assertThat(dao.findNonAssignedNonApproved(TEAM, dummyElement.getCreated().plusSeconds(10), 10)).isEmpty();
+    }
+
+    @Test
+    public void findNonAssignedNonApproved_CommitNonAssignedNonApprovedIsReturned() throws Exception {
+        Commit dummyElement = new CommitBuilder().created(COMMIT_CREATION_TIME).build();
+        dao.insert(dummyElement);
+        List<Commit> findResult = dao.findNonAssignedNonApproved(TEAM, COMMIT_CREATION_TIME.minusSeconds(10), 10);
+        assertThat(findResult).extracting(Commit::getId).containsExactly(dummyElement.getId());
+    }
+
+    @Test
+    public void findNonAssignedNonApproved_ReturnsUpToLimitAmount() throws Exception {
+        LocalDateTime creationDate = LocalDateTime.now();
+        dao.insert(new CommitBuilder().id("First").created(creationDate).build());
+        dao.insert(new CommitBuilder().id("Second").created(creationDate).build());
+        dao.insert(new CommitBuilder().id("Third").created(creationDate).build());
+
+        assertThat(dao.findNonAssignedNonApproved(TEAM, creationDate.minusSeconds(10), 10)).hasSize(3);
+        assertThat(dao.findNonAssignedNonApproved(TEAM, creationDate.minusSeconds(10), 2)).hasSize(2);
+        assertThat(dao.findNonAssignedNonApproved(TEAM, creationDate.minusSeconds(10), 1)).hasSize(1);
+        assertThat(dao.findNonAssignedNonApproved(TEAM, creationDate.minusSeconds(10), 0)).hasSize(3);
+    }
+
     private List<Commit> insertUserWithTeamAndFindNotifications(User user, int limit) {
         userDao.insertIfNotExists(user);
         User userWithTeam = userDao.addTeam(user.getId(), TEAM).get();
@@ -525,15 +628,23 @@ public class CommitDaoTest implements CommitFixture, CommentFixture {
     }
 
     private CommitFilter createFilter(CodeRepositoryMetadata repository, CommitAuthor author, boolean approved) {
-        return new CommitFilter(TEAM, asList(repository), asList(author), asList(), approved, Optional.empty(), 100);
+        return new CommitFilter(TEAM, asList(repository), asList(author), asList(), approved, Optional.empty(), Optional.empty(), 100, Optional.empty());
+    }
+
+    private CommitFilter createFilter(CodeRepositoryMetadata repository, Optional<User> assignee) {
+        return new CommitFilter(TEAM, asList(repository), asList(COMMIT_AUTHOR), asList(), true, Optional.empty(), Optional.empty(),100, assignee);
     }
 
     private CommitFilter createFilter(CodeRepositoryMetadata repository, User user, boolean approved) {
-        return new CommitFilter(TEAM, asList(repository), asList(), asList(user), approved, Optional.empty(), 100);
+        return new CommitFilter(TEAM, asList(repository), asList(), asList(user), approved, Optional.empty(), Optional.empty(), 100, Optional.empty());
     }
 
     private CommitFilter createFilter(Optional<String> lastCommitId, int limit) {
-        return new CommitFilter(TEAM, asList(REPOSITORY), asList(COMMIT_AUTHOR), asList(), true, lastCommitId, limit);
+        return new CommitFilter(TEAM, asList(REPOSITORY), asList(COMMIT_AUTHOR), asList(), true, lastCommitId, Optional.empty(), limit, Optional.empty());
+    }
+
+    private CommitFilter createFilterFetchedAfter(String fetchedAfterHash) {
+        return new CommitFilter(TEAM, asList(REPOSITORY), asList(COMMIT_AUTHOR), asList(), true, Optional.empty(), Optional.of(fetchedAfterHash), 100, Optional.empty());
     }
 
     private Commit insertWithComment(Commit dummyElement) {

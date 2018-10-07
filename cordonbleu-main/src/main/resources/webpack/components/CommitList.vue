@@ -4,6 +4,13 @@
 #show-approved-checkbox {
   margin-top: 4px;
   margin-bottom: 0;
+  float: left;
+}
+#assigned-to-me-checkbox {
+  margin-left: 20px;
+  margin-top: 4px;
+  margin-bottom: 0;
+  float: left;
 }
 .multiselect {
   margin: 2px;
@@ -71,23 +78,28 @@ th.icon {
       select#author-dropdown.btn-primary(multiple="multiple")
       div#show-approved-checkbox.checkbox
         label <input type="checkbox" v-model="showApproved" @change="updateApproved()"> Show Approved
+      div#assigned-to-me-checkbox.checkbox
+        label <input type="checkbox" v-model="onlyAssignedToMe" @change="updateList()"> Only assigned to me
       div#refresh-commit-list(v-if="refreshCount > 0")
         button.btn.btn-info.btn-xs(@click="updateList()")
           <span class="badge">{{refreshCount}}</span> new commit{{refreshCount | toPluralS}} available
     div#commit-list-container(@scroll="endlessScrolling.scroll()")
       table.table.table-striped.table-hover.table-condensed
         tr
-          th.author Author
           th.hash Commit
+          th.author Author
           th.created Time Ago
           th.repositories Repositories
+          th.icon <span class="fa fa-hand-o-right"></span>
           th.icon <span class="fa fa-comment"></span>
-          th.icon <span class="fa fa-check-square"></span>
+          th.icon <span class="fa fa-thumbs-up"></span>
         tr(v-for="commit in commits" v-link="{ name: 'commitDetail', params: { commitHash: commit.hash, teamName: $route.params.teamName }}", :class="{ 'info': commit.hash === $route.params.commitHash, 'removed': commit.removed }")
-          td(:title="commit.author | toCommitAuthor") {{{commit.author | toCommitAuthorWithAvatar}}}
           td(:title="commit.hash") {{commit.hash.substring(0, 6)}}
+          td(:title="commit.author | toCommitAuthor") {{{commit.author | toCommitAuthorWithAvatar}}}
           td(:title="commit.created | toFullTime") {{commit.created | toTimeAgo true}}
           td(:title="commit.repositories.join(', ')") {{commit.repositories}}
+          td(v-if="commit.assignment", :title="commit.assignment.assignee | toCommitAuthor" )  {{{commit.assignment.assignee | toAvatar 18}}}
+          td(v-else)
           td.icon <span class="badge">{{commit.numComments | ifPositive}}</span>
           td.icon <span class="fa" :class="commit.approved ? 'fa-check' : ''"></span>
 </template>
@@ -103,6 +115,7 @@ module.exports = {
     return {
       commits: [],
       showApproved: true,
+      onlyAssignedToMe: false,
       initialized: false,
       shiftKeyPressed: false,
       refreshCount: 0,
@@ -132,9 +145,8 @@ module.exports = {
     this.setupMultiselect('#author-dropdown', 'Authors')
 
     this.runInInterval('commitListRefresh', 60, () => {
-      this.fetchList(data => {
-        this.commits = this.commits.map(commit => data.find(newCommit => newCommit.hash === commit.hash) || commit)
-        this.refreshCount = data.filter(commit => !this.commits.some(existingCommit => existingCommit.hash === commit.hash)).length
+      this.countFetchSinceLastCommit(data => {
+        this.refreshCount = data
       }, true, this.commits.length + this.refreshCount, true)
     })
     this.initializeList(this.activeTeam.filters)
@@ -214,6 +226,7 @@ module.exports = {
       Lockr.set('#repository-dropdown', selectAllIsEmpty('#repository-dropdown'))
       Lockr.set('#author-dropdown', selectAllIsEmpty('#author-dropdown'))
       Lockr.set('showApproved', this.showApproved)
+      Lockr.set('onlyAssignedToMe', this.onlyAssignedToMe)
     },
     restoreFilters: function(data) {
       var filterToOption = (filter, labelFunc, valueFunc, selected) => {
@@ -231,31 +244,42 @@ module.exports = {
       ]
       $('#author-dropdown').multiselect('dataprovider', authorGroups)
       this.showApproved = Lockr.get('showApproved', true)
+      this.onlyAssignedToMe = Lockr.get('onlyAssignedToMe', true)
     },
     appendList: function() {
       this.fetchList(data => this.commits.push.apply(this.commits, data))
     },
     fetchList: function(callback, fetchUpdates, limit, hide) {
+      this.ajaxPost('/commit/list', this.buildCommitRequest(fetchUpdates, limit, false), data => {
+        callback(data)
+        DomHelper.waitForElement('commit-list-container', this.endlessScrolling.scroll)
+      }, {}, hide)
+    },
+    countFetchSinceLastCommit: function(callback) {
+      this.ajaxPost('/commit/count', this.buildCommitRequest(true, this.commits.length + this.refreshCount, true), data => {
+        callback(data)
+      }, {}, true)
+    },
+    buildCommitRequest: function(fetchUpdates, limit, onlyFetchedAfterLastCommit) {
       var optionToFilter = selector => ($(selector).val() || []).map(serializedValue => JSON.parse(serializedValue))
       var authorAllOptions = optionToFilter("#author-dropdown")
-      var commitListData = {
+      return {
         repository: optionToFilter("#repository-dropdown"),
         author: authorAllOptions.filter(author => typeof author === 'object'),
         user: authorAllOptions.filter(author => typeof author === 'string'),
         approved: this.showApproved,
+        onlyAssignedToMe: this.onlyAssignedToMe,
         lastCommitHash: this.commits.length == 0 || fetchUpdates ? null : this.commits[this.commits.length - 1].hash,
+        fetchedAfterCommitHash: onlyFetchedAfterLastCommit && this.commits.length > 0 ? this.commits[0].hash : null,
         limit: limit || LIMIT
       }
-      this.ajaxPost('/commit/list', commitListData, data => {
-        callback(data)
-        DomHelper.waitForElement('commit-list-container', this.endlessScrolling.scroll)
-      }, {}, hide)
     }
   },
   events: {
     'update-commit-broadcast': function(commit) {
       this.commits.filter(item => item.hash === commit.hash).forEach(item => {
         item.approved = commit.approval !== null
+        item.assignment = commit.assignment
         item.numComments = this.calcNumComments(commit)
       })
     }

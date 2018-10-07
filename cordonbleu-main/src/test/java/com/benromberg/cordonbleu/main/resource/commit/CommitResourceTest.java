@@ -7,13 +7,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.benromberg.cordonbleu.data.dao.CommitDao;
 import com.benromberg.cordonbleu.data.dao.TeamDao;
 import com.benromberg.cordonbleu.data.model.Comment;
+import com.benromberg.cordonbleu.data.model.CommentFixture;
+import com.benromberg.cordonbleu.data.model.Commit;
 import com.benromberg.cordonbleu.data.model.CommitApproval;
 import com.benromberg.cordonbleu.data.model.CommitFilePath;
 import com.benromberg.cordonbleu.data.model.CommitFixture;
+import com.benromberg.cordonbleu.data.model.CommitId;
 import com.benromberg.cordonbleu.data.model.CommitLineNumber;
 import com.benromberg.cordonbleu.data.model.TeamFlag;
 import com.benromberg.cordonbleu.main.CordonBleuTestRule;
 import com.benromberg.cordonbleu.main.RequestBuilder;
+import com.benromberg.cordonbleu.main.resource.RevertAssignmentRequest;
 import com.benromberg.cordonbleu.service.coderepository.CodeRepositoryMock;
 import com.benromberg.cordonbleu.service.commit.CommitNotificationActionType;
 import com.benromberg.cordonbleu.util.ClockService;
@@ -29,10 +33,6 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 
-import com.benromberg.cordonbleu.main.resource.commit.ApprovalRequest;
-import com.benromberg.cordonbleu.main.resource.commit.CommitAuthorRequest;
-import com.benromberg.cordonbleu.main.resource.commit.CommitListRequest;
-
 public class CommitResourceTest implements CommitFixture {
     private static final CommitLineNumber COMMIT_LINE_NUMBER = new CommitLineNumber(Optional.of(1), Optional.of(2));
     private static final CommitFilePath COMMIT_FILE_PATH = new CommitFilePath(Optional.of("before-path"),
@@ -41,7 +41,7 @@ public class CommitResourceTest implements CommitFixture {
 
     @Rule
     @ClassRule
-    public static final CordonBleuTestRule RULE = new CordonBleuTestRule().withRepository();
+    public static final CordonBleuTestRule RULE = new CordonBleuTestRule().withRepository().withCommentUser();
 
     private final CommitDao commitDao = RULE.getInstance(CommitDao.class);
     private final TeamDao teamDao = RULE.getInstance(TeamDao.class);
@@ -88,6 +88,50 @@ public class CommitResourceTest implements CommitFixture {
         Response response = RULE.post("/api/commit/list", createListRequest("non-existing-repo-id"));
         List<ReadCommitListItemResponse> commits = getCommitsFromResponse(response);
         assertThat(commits).isEmpty();
+    }
+
+    @Test
+    public void listCommits_AssignedToMe_ReturnsOnlyAssignedToMe() throws Exception {
+        commitDao.insert(COMMIT);
+
+        CommitId assignedToMeId = new CommitId("someRandomHash", TEAM);
+        Commit commitAssignedToMe = new CommitBuilder().assignee(RULE.getAuthenticatedUser()).id(assignedToMeId).build();
+        commitDao.insert(commitAssignedToMe);
+
+        Response response = RULE.withAuthenticatedUser().post("/api/commit/list", createListRequest(REPOSITORY_ID, true));
+        List<ReadCommitListItemResponse> commits = getCommitsFromResponse(response);
+        assertThat(commits).extracting(ReadCommitListItemResponse::getHash).containsExactly(assignedToMeId.getHash());
+    }
+
+    @Test
+    public void countPrivateTeam_WithoutBeingLoggedIn_YieldsNotFound() throws Exception {
+        teamDao.updateFlag(TEAM_ID, TeamFlag.PRIVATE, true);
+        Response response = RULE.post("/api/commit/count", createListRequest(REPOSITORY_ID));
+        assertThat(response.getStatus()).isEqualTo(Status.NOT_FOUND.getStatusCode());
+    }
+
+    @Test
+    public void countPrivateTeam_WithLoggedInUser_YieldsNotFound() throws Exception {
+        teamDao.updateFlag(TEAM_ID, TeamFlag.PRIVATE, true);
+        Response response = RULE.withAuthenticatedUser().post("/api/commit/count", createListRequest(REPOSITORY_ID));
+        assertThat(response.getStatus()).isEqualTo(Status.NOT_FOUND.getStatusCode());
+    }
+
+    @Test
+    public void countPrivateTeam_WithTeamMember_ReturnsCount() throws Exception {
+        commitDao.insert(COMMIT);
+        teamDao.updateFlag(TEAM_ID, TeamFlag.PRIVATE, true);
+        Response response = RULE.withTeamUser().post("/api/commit/count", createListRequest(REPOSITORY_ID));
+        assertThat(response.getStatus()).isEqualTo(Status.OK.getStatusCode());
+        assertThat(response.readEntity(Long.class)).isEqualTo(1L);
+    }
+
+    @Test
+    public void countPrivateTeam_WithoutCommits_ReturnsZero() throws Exception {
+        teamDao.updateFlag(TEAM_ID, TeamFlag.PRIVATE, true);
+        Response response = RULE.withTeamUser().post("/api/commit/count", createListRequest(REPOSITORY_ID));
+        assertThat(response.getStatus()).isEqualTo(Status.OK.getStatusCode());
+        assertThat(response.readEntity(Long.class)).isEqualTo(0L);
     }
 
     @Test
@@ -317,6 +361,137 @@ public class CommitResourceTest implements CommitFixture {
         assertThat(notification.getLastAction().getTime()).isEqualTo(RULE.getDateTime());
     }
 
+    @Test
+    public void assignInPrivateTeam_WithLoggedInUser_YieldsNotFound() throws Exception {
+        teamDao.updateFlag(TEAM_ID, TeamFlag.PRIVATE, true);
+        commitDao.insert(COMMIT);
+        Response response = RULE.withAuthenticatedUser().post("/api/commit/assign",
+                new AssignmentRequest(COMMIT_HASH, TEAM_ID, CommentFixture.COMMENT_USER.getId()));
+        assertThat(response.getStatus()).isEqualTo(Status.NOT_FOUND.getStatusCode());
+    }
+
+    @Test
+    public void assignInPrivateTeam_WithTeamUser_ReturnsApproval() throws Exception {
+        teamDao.updateFlag(TEAM_ID, TeamFlag.PRIVATE, true);
+        commitDao.insert(COMMIT);
+        Response response = RULE.withTeamUser().post("/api/commit/assign",
+                new AssignmentRequest(COMMIT_HASH, TEAM_ID, CommentFixture.COMMENT_USER.getId()));
+        assertThat(response.getStatus()).isEqualTo(Status.OK.getStatusCode());
+    }
+
+    @Test
+    public void assignInRestrictedApprovalTeam_WithAuthenticatedUser_YieldsForbidden() throws Exception {
+        teamDao.updateFlag(TEAM_ID, TeamFlag.APPROVE_MEMBER_ONLY, true);
+        commitDao.insert(COMMIT);
+        Response response = RULE.withAuthenticatedUser().post("/api/commit/assign",
+                new AssignmentRequest(COMMIT_HASH, TEAM_ID, CommentFixture.COMMENT_USER.getId()));
+        assertThat(response.getStatus()).isEqualTo(Status.FORBIDDEN.getStatusCode());
+    }
+
+    @Test
+    public void assignInRestrictedApprovalTeam_WithTeamUser_ReturnsApproval() throws Exception {
+        teamDao.updateFlag(TEAM_ID, TeamFlag.APPROVE_MEMBER_ONLY, true);
+        commitDao.insert(COMMIT);
+        Response response = RULE.withTeamUser().post("/api/commit/assign",
+                new AssignmentRequest(COMMIT_HASH, TEAM_ID, CommentFixture.COMMENT_USER.getId()));
+        assertThat(response.getStatus()).isEqualTo(Status.OK.getStatusCode());
+    }
+
+    @Test
+    public void assign_WithoutAuthenticatedUser_YieldsUnauthorized() throws Exception {
+        Response response = RULE.post("/api/commit/assign",
+                new AssignmentRequest(COMMIT_HASH, TEAM_ID, CommentFixture.COMMENT_USER.getId()));
+        assertThat(response.getStatus()).isEqualTo(Status.UNAUTHORIZED.getStatusCode());
+    }
+
+    @Test
+    public void assign_WithoutCommit_YieldsNotFound() throws Exception {
+        Response response = RULE.withAuthenticatedUser().post("/api/commit/assign",
+                new AssignmentRequest(COMMIT_HASH, TEAM_ID, CommentFixture.COMMENT_USER.getId()));
+        assertThat(response.getStatus()).isEqualTo(Status.NOT_FOUND.getStatusCode());
+    }
+
+    @Test
+    public void assign_WithNonExistingUserId_YieldsNotFound() throws Exception {
+        Response response = RULE.withAuthenticatedUser().post("/api/commit/assign",
+                new AssignmentRequest(COMMIT_HASH, TEAM_ID, "this user id does not exist"));
+        assertThat(response.getStatus()).isEqualTo(Status.NOT_FOUND.getStatusCode());
+    }
+
+    @Test
+    public void assign_WithExistingCommit_ReturnsApproval() throws Exception {
+        commitDao.insert(COMMIT);
+        Response response = RULE.withTeamUser().post("/api/commit/assign",
+                new AssignmentRequest(COMMIT_HASH, TEAM_ID, CommentFixture.COMMENT_USER.getId()));
+        assertThat(response.getStatus()).isEqualTo(Status.OK.getStatusCode());
+        ReadCommitAssignmentResponse assignmentResponse = response
+                .readEntity(new GenericType<ReadCommitAssignmentResponse>() {
+                });
+
+        assertThat(assignmentResponse.getAssignee().getEmail()).isEqualTo(CommentFixture.COMMENT_USER_EMAIL);
+    }
+
+    @Test
+    public void revertAssignmentInPrivateTeam_WithLoggedInUser_YieldsNotFound() throws Exception {
+        teamDao.updateFlag(TEAM_ID, TeamFlag.PRIVATE, true);
+        commitDao.insert(COMMIT);
+        Response response = RULE.withAuthenticatedUser().post("/api/commit/revertAssignment",
+                new RevertAssignmentRequest(COMMIT_HASH, TEAM_ID));
+        assertThat(response.getStatus()).isEqualTo(Status.NOT_FOUND.getStatusCode());
+    }
+
+    @Test
+    public void revertAssignmentInPrivateTeam_WithTeamUser_ReturnsApproval() throws Exception {
+        teamDao.updateFlag(TEAM_ID, TeamFlag.PRIVATE, true);
+        commitDao.insert(COMMIT);
+        Response response = RULE.withTeamUser().post("/api/commit/revertAssignment",
+                new RevertAssignmentRequest(COMMIT_HASH, TEAM_ID));
+        assertThat(response.getStatus()).isEqualTo(Status.NO_CONTENT.getStatusCode());
+    }
+
+    @Test
+    public void revertAssignmentInRestrictedApprovalTeam_WithAuthenticatedUser_YieldsForbidden() throws Exception {
+        teamDao.updateFlag(TEAM_ID, TeamFlag.APPROVE_MEMBER_ONLY, true);
+        commitDao.insert(COMMIT);
+        Response response = RULE.withAuthenticatedUser().post("/api/commit/revertAssignment",
+                new RevertAssignmentRequest(COMMIT_HASH, TEAM_ID));
+        assertThat(response.getStatus()).isEqualTo(Status.FORBIDDEN.getStatusCode());
+    }
+
+    @Test
+    public void revertAssignmentInRestrictedApprovalTeam_WithTeamUser_ReturnsNoContent() throws Exception {
+        teamDao.updateFlag(TEAM_ID, TeamFlag.APPROVE_MEMBER_ONLY, true);
+        commitDao.insert(COMMIT);
+        Response response = RULE.withTeamUser().post("/api/commit/revertAssignment",
+                new RevertAssignmentRequest(COMMIT_HASH, TEAM_ID));
+        assertThat(response.getStatus()).isEqualTo(Status.NO_CONTENT.getStatusCode());
+    }
+
+    @Test
+    public void revertAssignment_WithoutAuthenticatedUser_YieldsUnauthorized() throws Exception {
+        Response response = RULE.post("/api/commit/revertAssignment",
+                new RevertAssignmentRequest(COMMIT_HASH, TEAM_ID));
+        assertThat(response.getStatus()).isEqualTo(Status.UNAUTHORIZED.getStatusCode());
+    }
+
+    @Test
+    public void revertAssignment_WithoutCommit_YieldsNotFound() throws Exception {
+        Response response = RULE.withAuthenticatedUser().post("/api/commit/revertAssignment",
+                new RevertAssignmentRequest(COMMIT_HASH, TEAM_ID));
+        assertThat(response.getStatus()).isEqualTo(Status.NOT_FOUND.getStatusCode());
+    }
+
+    @Test
+    public void revertAssignment_WithExistingCommit_ReturnsNoContent() throws Exception {
+        commitDao.insert(COMMIT);
+        commitDao.updateApproval(COMMIT_ID,
+                Optional.of(new CommitApproval(RULE.getAuthenticatedUser(), ClockService.now())));
+        Response response = RULE.withTeamUser().post("/api/commit/revertAssignment",
+                new RevertAssignmentRequest(COMMIT_HASH, TEAM_ID));
+        assertThat(response.getStatus()).isEqualTo(Status.NO_CONTENT.getStatusCode());
+    }
+
+
     private Response requestSpacerLines(RequestBuilder requestBuilder) {
         commitDao.insert(COMMIT);
         return requestBuilder.param("hash", COMMIT_HASH).param("teamId", TEAM_ID)
@@ -325,8 +500,12 @@ public class CommitResourceTest implements CommitFixture {
     }
 
     private CommitListRequest createListRequest(String repositoryId) {
+        return createListRequest(repositoryId, false);
+    }
+
+    private CommitListRequest createListRequest(String repositoryId, boolean onlyAssignedToMe) {
         return new CommitListRequest(asList(repositoryId), asList(new CommitAuthorRequest(COMMIT_AUTHOR_NAME,
-                COMMIT_AUTHOR_EMAIL)), asList(), true, Optional.empty(), LIMIT);
+                COMMIT_AUTHOR_EMAIL)), asList(), true, onlyAssignedToMe, Optional.empty(), Optional.empty(), LIMIT);
     }
 
     private List<ReadCommitListItemResponse> getCommitsFromResponse(Response response) {

@@ -3,13 +3,10 @@ package com.benromberg.cordonbleu.data.model;
 import static java.util.Arrays.asList;
 import com.benromberg.cordonbleu.util.ClockService;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
-
-import com.benromberg.cordonbleu.data.model.Commit;
-import com.benromberg.cordonbleu.data.model.CommitAuthor;
-import com.benromberg.cordonbleu.data.model.CommitId;
-import com.benromberg.cordonbleu.data.model.CommitRepository;
+import java.util.Optional;
 
 public interface CommitFixture extends RepositoryFixture {
     String COMMIT_HASH = "commit-hash";
@@ -34,6 +31,8 @@ public interface CommitFixture extends RepositoryFixture {
         private CommitAuthor author = COMMIT_AUTHOR;
         private LocalDateTime created = COMMIT_CREATED;
         private String message = COMMIT_MESSAGE;
+        private Optional<User> assignee = Optional.empty();
+        private Optional<LocalDateTime> fetchedAt = Optional.empty();
 
         public CommitBuilder id(CommitId id) {
             this.id = id;
@@ -55,6 +54,11 @@ public interface CommitFixture extends RepositoryFixture {
             return this;
         }
 
+        public CommitBuilder assignee(User user) {
+            this.assignee = Optional.of(user);
+            return this;
+        }
+
         public CommitBuilder created(LocalDateTime created) {
             this.created = created;
             return this;
@@ -65,8 +69,13 @@ public interface CommitFixture extends RepositoryFixture {
             return this;
         }
 
+        public CommitBuilder fetchedAt(LocalDateTime fetchedAt) {
+            this.fetchedAt = Optional.of(fetchedAt);
+            return this;
+        }
+
         public Commit build() {
-            return new Commit(this.id, this.repositories, this.author, this.created, this.message);
+            return new Commit(this.id, this.repositories, this.author, this.assignee, this.created, this.message, this.fetchedAt.orElse(LocalDateTime.now()));
         }
     }
 }

@@ -2,9 +2,9 @@ $authorWidth: 100px;
 $hashWidth: 60px;
 $createdWidth: 75px;
 $repositoriesWidth: 100px;
-$iconWidth: 34px;
+$iconWidth: 28px;
 $scrollbarWidth: 16px;
 $codeFontSize: 13px;
 $lineNumberWidth: 42px;
 
-$tableWidth: $authorWidth + $hashWidth + $createdWidth + $repositoriesWidth + 2 * $iconWidth + $scrollbarWidth;
+$tableWidth: $authorWidth + $hashWidth + $createdWidth + $repositoriesWidth + 3 * $iconWidth + $scrollbarWidth;

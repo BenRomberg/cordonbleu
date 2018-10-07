@@ -7,9 +7,13 @@ import com.benromberg.cordonbleu.data.model.Comment;
 import com.benromberg.cordonbleu.data.model.Commit;
 import com.benromberg.cordonbleu.data.model.CommitApproval;
 import com.benromberg.cordonbleu.data.model.CommitId;
+import com.benromberg.cordonbleu.data.model.Team;
 import com.benromberg.cordonbleu.data.model.User;
+import com.benromberg.cordonbleu.service.assignment.AssignmentEmailService;
+import com.benromberg.cordonbleu.service.assignment.CommitBatchAssignment;
 import com.benromberg.cordonbleu.util.ClockService;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -20,14 +24,16 @@ public class CommitService {
     private final CommitDao commitDao;
     private final int notificationConsiderationAmount;
     private final TeamDao teamDao;
+    private final AssignmentEmailService assignmentEmailService;
 
     @Inject
     public CommitService(CommitDao commitDao, TeamDao teamDao,
-            CommitNotificationConsiderationAmount notificationConsiderationAmount) {
+            CommitNotificationConsiderationAmount notificationConsiderationAmount, AssignmentEmailService assignmentEmailService) {
         this.commitDao = commitDao;
         this.teamDao = teamDao;
         this.notificationConsiderationAmount = notificationConsiderationAmount
                 .getCommitNotificationConsiderationAmount();
+        this.assignmentEmailService = assignmentEmailService;
     }
 
     public Optional<CommitApproval> approve(CommitId commitId, User user) {
@@ -37,6 +43,20 @@ public class CommitService {
 
     public boolean revertApproval(CommitId commitId) {
         return updateApproval(commitId, Optional.empty()).isPresent();
+    }
+
+    public Optional<User> assign(Commit commit, User assignedTo, User assignedBy) {
+        assignmentEmailService.sendSingleAssignmentEmail(commit, assignedTo, assignedBy);
+        return commitDao.updateAssignee(commit.getId(), Optional.of(assignedTo)).flatMap(Commit::getAssignee);
+    }
+
+    public void assignCommitBatch(CommitBatchAssignment commitBatchAssignment, User assignedBy) {
+        assignmentEmailService.sendBatchAssignmentEmail(commitBatchAssignment, assignedBy);
+        commitBatchAssignment.getCommits().forEach(commit -> commitDao.updateAssignee(commit.getId(), Optional.of(commitBatchAssignment.getAssignee())));
+    }
+
+    public boolean revertAssignment(CommitId commitId) {
+        return commitDao.updateAssignee(commitId, Optional.empty()).isPresent();
     }
 
     public Optional<Commit> findById(RawCommitId rawCommitId) {
@@ -55,6 +75,10 @@ public class CommitService {
                 .map(commit -> mapCommitToNotification(commit, user)).collect(toList());
         int totalAmount = (int) notifications.stream().filter(CommitNotification::isPrompt).count();
         return new CommitNotifications(totalAmount, notifications.stream().limit(limit).collect(toList()));
+    }
+
+    public List<Commit> findRecentCommitsToAssign(Team team) {
+        return commitDao.findNonAssignedNonApproved(team, LocalDateTime.now().minusDays(15), 500);
     }
 
     private CommitNotification mapCommitToNotification(Commit commit, User user) {

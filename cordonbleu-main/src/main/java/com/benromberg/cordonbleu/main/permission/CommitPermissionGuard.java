@@ -44,6 +44,14 @@ public class CommitPermissionGuard {
         return commit;
     }
 
+    public Commit guardAssignment(UserWithPermissions user, RawCommitId rawCommitId) {
+        Commit commit = ensureViewPermission(user, rawCommitId);
+        if (!user.hasTeamPermission(TeamPermission.ASSIGN, commit.getId().getTeam())) {
+            throw new ForbiddenException();
+        }
+        return commit;
+    }
+
     private Commit ensureViewPermission(UserWithPermissions user, RawCommitId rawCommitId) {
         Commit commit = commitService.findById(rawCommitId).get();
         if (!user.hasTeamPermission(TeamPermission.VIEW, commit.getId().getTeam())) {
