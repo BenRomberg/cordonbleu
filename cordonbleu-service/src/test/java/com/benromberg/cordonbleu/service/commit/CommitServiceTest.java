@@ -20,6 +20,7 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -213,6 +214,6 @@ public class CommitServiceTest implements CommitFixture, CommentFixture {
         assertThat(notification.isPrompt()).isEqualTo(prompt);
         assertThat(notification.getLastAction().getType()).isEqualTo(lastActionType);
         assertThat(notification.getLastAction().getUser().getEmail()).isEqualTo(lastActionUser.getEmail());
-        assertThat(notification.getLastAction().getTime()).isEqualTo(systemTimeRule.getDateTime());
+        assertThat(notification.getLastAction().getTime()).isEqualTo(systemTimeRule.getDateTime().truncatedTo(ChronoUnit.MILLIS));
     }
 }

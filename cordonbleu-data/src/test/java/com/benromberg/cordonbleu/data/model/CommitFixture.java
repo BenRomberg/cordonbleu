@@ -1,19 +1,20 @@
 package com.benromberg.cordonbleu.data.model;
 
-import static java.util.Arrays.asList;
 import com.benromberg.cordonbleu.util.ClockService;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
+
+import static java.util.Arrays.asList;
 
 public interface CommitFixture extends RepositoryFixture {
     String COMMIT_HASH = "commit-hash";
     CommitId COMMIT_ID = new CommitId(COMMIT_HASH, TEAM);
     String COMMIT_AUTHOR_EMAIL = "author@email.com";
     String COMMIT_AUTHOR_NAME = "author-name";
-    LocalDateTime COMMIT_CREATED = ClockService.now();
+    LocalDateTime COMMIT_CREATED = ClockService.now().truncatedTo(ChronoUnit.MILLIS);
     String COMMIT_MESSAGE = "commit message";
     String COMMIT_BRANCH = "commit-branch";
     List<String> COMMIT_BRANCHES = asList(COMMIT_BRANCH);

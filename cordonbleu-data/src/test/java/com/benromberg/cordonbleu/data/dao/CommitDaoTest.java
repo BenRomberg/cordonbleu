@@ -1,18 +1,18 @@
 package com.benromberg.cordonbleu.data.dao;
 
-import static java.util.Arrays.asList;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.tuple;
+import com.benromberg.cordonbleu.data.model.CodeRepositoryMetadata;
+import com.benromberg.cordonbleu.data.model.Comment;
 import com.benromberg.cordonbleu.data.model.CommentFixture;
+import com.benromberg.cordonbleu.data.model.Commit;
+import com.benromberg.cordonbleu.data.model.CommitApproval;
+import com.benromberg.cordonbleu.data.model.CommitAuthor;
 import com.benromberg.cordonbleu.data.model.CommitFixture;
+import com.benromberg.cordonbleu.data.model.CommitId;
+import com.benromberg.cordonbleu.data.model.CommitRepository;
+import com.benromberg.cordonbleu.data.model.Team;
+import com.benromberg.cordonbleu.data.model.User;
 import com.benromberg.cordonbleu.util.SystemTimeRule;
-
-import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
+import com.mongodb.DBObject;
 
 import org.junit.Before;
 import org.junit.Ignore;
@@ -20,16 +20,17 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import com.benromberg.cordonbleu.data.model.CodeRepositoryMetadata;
-import com.benromberg.cordonbleu.data.model.Comment;
-import com.benromberg.cordonbleu.data.model.Commit;
-import com.benromberg.cordonbleu.data.model.CommitApproval;
-import com.benromberg.cordonbleu.data.model.CommitAuthor;
-import com.benromberg.cordonbleu.data.model.CommitId;
-import com.benromberg.cordonbleu.data.model.CommitRepository;
-import com.benromberg.cordonbleu.data.model.Team;
-import com.benromberg.cordonbleu.data.model.User;
-import com.mongodb.DBObject;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
+
+import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 public class CommitDaoTest implements CommitFixture, CommentFixture {
     private static final Team OTHER_TEAM = new TeamBuilder().name("other-team").build();
@@ -40,8 +41,8 @@ public class CommitDaoTest implements CommitFixture, CommentFixture {
     private static final String FIRST_AUTHOR_NAME = "aaaauthor";
     private static final String UPPERCASE_AUTHOR = "Uppercase Author";
     private static final String OTHER_TEXT = "other text";
-    private static final LocalDateTime COMMIT_APPROVAL_TIME = LocalDateTime.now();
-    private static final LocalDateTime COMMIT_CREATION_TIME = LocalDateTime.now();
+    private static final LocalDateTime COMMIT_APPROVAL_TIME = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS);
+    private static final LocalDateTime COMMIT_CREATION_TIME = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS);
     private static final String OTHER_COMMIT_HASH = "other commit hash";
     private static final List<String> OTHER_COMMIT_BRANCHES = asList("other commit branch");
     private static final CodeRepositoryMetadata OTHER_REPOSITORY = new RepositoryBuilder().name(OTHER_REPOSITORY_NAME)

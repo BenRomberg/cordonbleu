@@ -1,15 +1,15 @@
 package com.benromberg.cordonbleu.data.dao;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import com.benromberg.cordonbleu.data.model.User;
+import com.benromberg.cordonbleu.data.model.UserSession;
 import com.benromberg.cordonbleu.util.SystemTimeRule;
 
 import org.junit.Rule;
 import org.junit.Test;
 
-import com.benromberg.cordonbleu.data.dao.UserDao;
-import com.benromberg.cordonbleu.data.dao.UserSessionDao;
-import com.benromberg.cordonbleu.data.model.User;
-import com.benromberg.cordonbleu.data.model.UserSession;
+import java.time.temporal.ChronoUnit;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class UserSessionDaoTest {
     private static final String SESSION_ID = "session id";
@@ -32,6 +32,6 @@ public class UserSessionDaoTest {
         dao.insert(new UserSession(SESSION_ID, user));
         UserSession foundSession = dao.findById(SESSION_ID).get();
         assertThat(foundSession.getUser()).isEqualTo(user);
-        assertThat(foundSession.getCreated()).isEqualTo(systemTimeRule.getDateTime());
+        assertThat(foundSession.getCreated()).isEqualTo(systemTimeRule.getDateTime().truncatedTo(ChronoUnit.MILLIS));
     }
 }
