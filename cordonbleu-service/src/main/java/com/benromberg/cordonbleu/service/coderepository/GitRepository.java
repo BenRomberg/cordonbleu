@@ -30,6 +30,7 @@ import org.eclipse.jgit.transport.OpenSshConfig.Host;
 import org.eclipse.jgit.transport.SshTransport;
 import org.eclipse.jgit.transport.Transport;
 import org.eclipse.jgit.util.FS;
+import org.eclipse.jgit.util.SystemReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,6 +57,8 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
+import static org.eclipse.jgit.lib.ConfigConstants.CONFIG_KEY_PRUNE;
+import static org.eclipse.jgit.lib.ConfigConstants.CONFIG_REMOTE_SECTION;
 
 public class GitRepository implements CodeRepository, AutoCloseable {
     private static final Logger LOGGER = LoggerFactory.getLogger(GitRepository.class);
@@ -67,6 +70,7 @@ public class GitRepository implements CodeRepository, AutoCloseable {
 
     static {
         JSch.setConfig("StrictHostKeyChecking", "no");
+        SystemReader.setInstance(new SystemReaderIgnoringSystemAndUserConfig());
     }
 
     private final Repository repository;
@@ -90,7 +94,7 @@ public class GitRepository implements CodeRepository, AutoCloseable {
     }
 
     private void configureRepository() {
-        repository.getConfig().setBoolean("remote", "origin", "prune", true);
+        repository.getConfig().setBoolean(CONFIG_REMOTE_SECTION, "origin", CONFIG_KEY_PRUNE, true);
     }
 
     private <C extends GitCommand<T>, T> T callWithAuthentication(TransportCommand<C, T> command) {
