@@ -19,6 +19,7 @@ import org.eclipse.jgit.api.ResetCommand.ResetType;
 import org.eclipse.jgit.api.TransportCommand;
 import org.eclipse.jgit.api.TransportConfigCallback;
 import org.eclipse.jgit.lib.Constants;
+import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.merge.MergeStrategy;
@@ -174,8 +175,13 @@ public class GitRepository implements CodeRepository, AutoCloseable {
         CommitId commitId = new CommitId(commit.getName(), repositoryMetadata.getTeam());
         return new CommitWithRepository(new Commit(commitId, asList(commitRepository),
                 new CommitAuthor(commit.getAuthorIdent().getName(), commit.getAuthorIdent().getEmailAddress()), Optional.empty(),
-                LocalDateTime.ofEpochSecond(commit.getCommitTime(), 0, ZoneOffset.UTC), commit.getFullMessage(), ClockService.now()),
+                getAuthorTime(commit), commit.getFullMessage(), ClockService.now()),
                 commitRepository);
+    }
+
+    private LocalDateTime getAuthorTime(RevCommit commit) {
+        PersonIdent authorIdent = commit.getAuthorIdent();
+        return LocalDateTime.ofInstant(authorIdent.getWhen().toInstant(), ZoneOffset.UTC);
     }
 
     private List<Ref> getRemoteBranchReferences() {
