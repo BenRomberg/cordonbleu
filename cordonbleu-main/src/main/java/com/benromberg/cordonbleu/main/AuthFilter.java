@@ -1,5 +1,9 @@
 package com.benromberg.cordonbleu.main;
 
+import com.benromberg.cordonbleu.main.config.CordonBleuConfiguration;
+import com.benromberg.cordonbleu.main.config.Credentials;
+
+import java.util.Base64;
 import java.util.Optional;
 
 import javax.inject.Inject;
@@ -10,10 +14,6 @@ import javax.ws.rs.container.PreMatching;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.Provider;
-import javax.xml.bind.DatatypeConverter;
-
-import com.benromberg.cordonbleu.main.config.CordonBleuConfiguration;
-import com.benromberg.cordonbleu.main.config.Credentials;
 
 @Provider
 @PreMatching
@@ -46,7 +46,7 @@ public class AuthFilter implements ContainerRequestFilter {
 
     public static String[] decode(String auth) {
         auth = auth.replaceFirst("[B|b]asic ", "");
-        byte[] decodedBytes = DatatypeConverter.parseBase64Binary(auth);
+        byte[] decodedBytes = Base64.getDecoder().decode(auth);
         return new String(decodedBytes).split(":", 2);
     }
 }
