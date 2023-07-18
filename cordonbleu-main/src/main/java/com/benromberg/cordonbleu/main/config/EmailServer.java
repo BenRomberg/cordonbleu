@@ -5,6 +5,8 @@ import com.benromberg.cordonbleu.util.ClasspathUtil;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import static java.util.Optional.empty;
+
 public class EmailServer {
     @JsonProperty
     private final String host;
@@ -36,6 +38,6 @@ public class EmailServer {
 
     public EmailConfiguration toConfiguration() {
         String sharedCss = ClasspathUtil.readFileFromClasspath("webpack/sharedWithEmail.css");
-        return new EmailConfiguration(host, port, username, password, fromAddress, rootPath, sharedCss);
+        return new EmailConfiguration(host, port, username, password, fromAddress, rootPath, sharedCss, empty());
     }
 }

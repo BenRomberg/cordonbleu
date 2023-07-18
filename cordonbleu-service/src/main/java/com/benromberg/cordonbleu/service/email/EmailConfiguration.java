@@ -1,5 +1,9 @@
 package com.benromberg.cordonbleu.service.email;
 
+import org.simplejavamail.api.mailer.config.TransportStrategy;
+
+import java.util.Optional;
+
 public class EmailConfiguration {
     private final String host;
     private final int port;
@@ -8,9 +12,10 @@ public class EmailConfiguration {
     private final String fromAddress;
     private final String rootPath;
     private final String sharedCss;
+    private final Optional<TransportStrategy> transportStrategy;
 
     public EmailConfiguration(String host, int port, String username, String password, String fromAddress, String rootPath,
-            String sharedCss) {
+            String sharedCss, Optional<TransportStrategy> transportStrategy) {
         this.host = host;
         this.port = port;
         this.username = username;
@@ -18,6 +23,7 @@ public class EmailConfiguration {
         this.fromAddress = fromAddress;
         this.rootPath = rootPath;
         this.sharedCss = sharedCss;
+        this.transportStrategy = transportStrategy;
     }
 
     public String getHost() {
@@ -46,5 +52,9 @@ public class EmailConfiguration {
 
     public String getSharedCss() {
         return sharedCss;
+    }
+
+    public TransportStrategy getTransportStrategy() {
+        return transportStrategy.orElse(TransportStrategy.SMTP_TLS);
     }
 }

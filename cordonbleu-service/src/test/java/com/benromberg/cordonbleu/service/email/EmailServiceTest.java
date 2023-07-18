@@ -1,17 +1,16 @@
 package com.benromberg.cordonbleu.service.email;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import com.benromberg.cordonbleu.data.model.User;
-
-import java.util.List;
-
-import javax.mail.internet.MimeMessage;
 
 import org.junit.Rule;
 import org.junit.Test;
 import org.stringtemplate.v4.ST;
 
-import com.benromberg.cordonbleu.service.email.EmailTemplate;
+import java.util.List;
+
+import jakarta.mail.internet.MimeMessage;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class EmailServiceTest {
     private static final User SENDING_USER = new User("sending@user.com", "user", "some password");

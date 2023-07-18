@@ -10,20 +10,22 @@ import com.icegreen.greenmail.util.ServerSetupTest;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
+import org.simplejavamail.api.mailer.config.TransportStrategy;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Stream;
 
-import javax.mail.Address;
-import javax.mail.BodyPart;
-import javax.mail.Message.RecipientType;
-import javax.mail.MessagingException;
-import javax.mail.Multipart;
-import javax.mail.internet.MimeMessage;
+import jakarta.mail.Address;
+import jakarta.mail.BodyPart;
+import jakarta.mail.Message;
+import jakarta.mail.MessagingException;
+import jakarta.mail.Multipart;
+import jakarta.mail.internet.MimeMessage;
 
 import static com.benromberg.cordonbleu.util.ExceptionUtil.convertException;
 import static java.util.Arrays.asList;
+import static java.util.Optional.of;
 import static java.util.stream.Collectors.toList;
 
 public class EmailRule implements TestRule {
@@ -33,7 +35,7 @@ public class EmailRule implements TestRule {
     private final GreenMailRule greenMail = new GreenMailRule(EMAIL_SERVER);
     private final EmailService emailService = new EmailService(
             new EmailConfiguration(EMAIL_SERVER.getBindAddress(), EMAIL_SERVER.getPort(), "", "", "cordonbleu@example.com", EMAIL_ROOT_PATH,
-                    ""));
+                    "", of(TransportStrategy.SMTP)));
 
     @Override
     public Statement apply(Statement base, Description description) {
@@ -62,7 +64,7 @@ public class EmailRule implements TestRule {
     }
 
     public List<String> getRecipientsTo() {
-        Address[] recipients = convertException(() -> getReceivedMessages().get(0).getRecipients(RecipientType.TO));
+        Address[] recipients = convertException(() -> getReceivedMessages().get(0).getRecipients(Message.RecipientType.TO));
         return Stream.of(recipients).map(address -> address.toString()).collect(toList());
     }
 
@@ -95,8 +97,7 @@ public class EmailRule implements TestRule {
         return msgContent.toString();
     }
 
-    private String getPlainBodyFromMultipart(Multipart multipart, MediaType part) throws IOException,
-            MessagingException {
+    private String getPlainBodyFromMultipart(Multipart multipart, MediaType part) throws IOException, MessagingException {
         for (int j = 0; j < multipart.getCount(); j++) {
             BodyPart bodyPart = multipart.getBodyPart(j);
             if (bodyPart.getContent() instanceof Multipart) {
